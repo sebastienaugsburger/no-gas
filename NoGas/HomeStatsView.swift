@@ -18,7 +18,7 @@ struct HomeStatsView: View {
     
     @Query(sort: \Drive.startTime, order: .reverse) private var drives: [Drive]
     
-    @State private var showAddTripView: Bool = false
+    //@State private var showAddTripView: Bool = false
     @State private var showRecordDrive: Bool = false
     
     var body: some View {
@@ -44,21 +44,21 @@ struct HomeStatsView: View {
                             RecordDriveView(showRecordDriveView: $showRecordDrive)
                         }
                         
-                        Button {
-                            showAddTripView = true
-                        } label: {
-                            Label("Add Trip", systemImage: "plus")
-                                .font(.title3.bold())
-                                .foregroundStyle(Color.accentColor)
-                                .frame(maxWidth: viewWidth - 40, minHeight: 55, maxHeight: 55)
-                                .background {
-                                    RoundedRectangle(cornerRadius: 15)
-                                        .fill(Color(uiColor: UIColor.systemGray5))
-                                }
-                        }
-                        .fullScreenCover(isPresented: $showAddTripView) {
-                            AddTripView(showAddTrip: $showAddTripView)
-                        }
+//                        Button {
+//                            showAddTripView = true
+//                        } label: {
+//                            Label("Add Trip", systemImage: "plus")
+//                                .font(.title3.bold())
+//                                .foregroundStyle(Color.accentColor)
+//                                .frame(maxWidth: viewWidth - 40, minHeight: 55, maxHeight: 55)
+//                                .background {
+//                                    RoundedRectangle(cornerRadius: 15)
+//                                        .fill(Color(uiColor: UIColor.systemGray5))
+//                                }
+//                        }
+//                        .fullScreenCover(isPresented: $showAddTripView) {
+//                            AddTripView(showAddTrip: $showAddTripView)
+//                        }
                         
                         Group {
 //                            HStack {

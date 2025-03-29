@@ -43,46 +43,53 @@ class DriveManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     
     override init() {
         super.init()
-        locationManager.delegate = self
-        locationManager.requestWhenInUseAuthorization()
-        locationManager.allowsBackgroundLocationUpdates = true
-        locationManager.pausesLocationUpdatesAutomatically = false
-        locationManager.desiredAccuracy = kCLLocationAccuracyBestForNavigation
-        locationManager.startUpdatingLocation()
+        self.locationManager.delegate = self
+        // Request when-in-use location authorization
+        self.locationManager.requestWhenInUseAuthorization()
+        /* Enable the app to collect location updates while it's in the background */
+        self.locationManager.allowsBackgroundLocationUpdates = true
+        self.locationManager.pausesLocationUpdatesAutomatically = false
+        // Set location accuracy value
+        self.locationManager.desiredAccuracy = kCLLocationAccuracyKilometer //kCLLocationAccuracyBestForNavigation
+        /* Set activity type for Core Location so that Core Location
+        makes small adjustments to the reported location to match known roads */
+        self.locationManager.activityType = .automotiveNavigation
+        self.locationManager.startUpdatingLocation()
     }
     
     func startRecording() {
-        currentDrive = Drive(startTime: Date())
-        isRecording = true
-        lastLocation = nil
+        self.currentDrive = Drive(startTime: Date())
+        self.isRecording = true
+        self.lastLocation = nil
     }
     
     func stopRecording(context: ModelContext) {
         guard let drive = currentDrive else { return }
         drive.endTime = Date()
-        isRecording = false
+        self.isRecording = false
         //locationManager.stopUpdatingLocation()
         if drive.locations.count > 1 {
             context.insert(drive)
         }
-        currentDrive = nil
+        self.currentDrive = nil
     }
     
+    // Core Location provides location updates to the location manager’s delegate
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         print("location manager did update location")
         
         guard let newLocation = locations.last else { return }
-        DispatchQueue.main.async {
+        //DispatchQueue.main.async {
             self.hasCurrentLocation = true
             self.currentLocation = newLocation.coordinate
-        }
+        //}
         
         if isRecording {
             if let last = lastLocation {
                 let distance = last.distance(from: newLocation)
-                DispatchQueue.main.async {
+                //DispatchQueue.main.async {
                     self.currentDrive?.distance += distance
-                }
+                //}
             }
             
             let latitude = newLocation.coordinate.latitude
@@ -90,11 +97,11 @@ class DriveManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             
             let driveLocation = DriveLocation(latitude: latitude, longitude: longitude)
             
-            DispatchQueue.main.async {
+            //DispatchQueue.main.async {
                 self.currentDrive?.locations.append(driveLocation)
-            }
+            //}
             
-            lastLocation = newLocation
+            self.lastLocation = newLocation
             
             print("Updated location")
         }

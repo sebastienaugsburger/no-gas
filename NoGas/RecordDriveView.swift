@@ -35,53 +35,50 @@ struct RecordDriveView: View {
     
     var body: some View {
         NavigationStack {
-            VStack(spacing: 10) {
-                    // Map goes here
-                    VStack (alignment: .leading, spacing: 10) {
-                        
-                        ZStack {
-                            Color(uiColor: .systemGray6)
-                            //Map(position: .constant(.region(region)), interactionModes: .all)
-                            DriveMapView(region: $region)
-                        }
-                        .cornerRadius(20)
-                        .environmentObject(driveManager)
-                        .onChange(of: driveManager.hasCurrentLocation) { newLocation, oldLocation in
-                            guard let cuLocation = driveManager.currentLocation else { return }
-                            region.center = cuLocation
-                        }
-                        
-                        HStack(spacing: 20) {
-                            VStack(alignment: .leading, spacing: 0) {
-                                Text(timerString)
-                                    .font(.title.bold())
-                                    .onReceive(timer) { _ in
-                                        if isTimerRunning {
-                                            timerString = String(format: "%.0fs", (Date().timeIntervalSince(startTime)))
-                                        }
-                                    }
-                                    .onAppear() {
-                                        // no need for UI updates at startup
-                                        stopTimer()
-                                    }
-                                Text("Duration")
-                                    .font(.caption)
-                            }
+            VStack(spacing: 20) {
+                VStack (alignment: .leading, spacing: 20) {
+                    ZStack {
+                        Color(uiColor: .systemGray6)
+                        //Map(position: .constant(.region(region)), interactionModes: .all)
+                        DriveMapView(region: $region)
                             
-                            VStack(alignment: .leading, spacing: 0) {
-                                Text(distanceString)
-                                    .font(.title.bold())
-                                Text("Distance (Miles)")
-                                    .font(.caption)
-                            }
-                            
-                            Spacer()
-                        }
-                        .padding(.horizontal)
                     }
                     
+                    .cornerRadius(20)
+                    .environmentObject(driveManager)
+                    .onChange(of: driveManager.hasCurrentLocation) { newLocation, oldLocation in
+                        guard let cuLocation = driveManager.currentLocation else { return }
+                        region.center = cuLocation
+                    }
                     
-                
+                    HStack(spacing: 20) {
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text(timerString)
+                                .font(.title.bold())
+                                .onReceive(timer) { _ in
+                                    if isTimerRunning {
+                                        timerString = String(format: "%.0fs", (Date().timeIntervalSince(startTime)))
+                                    }
+                                }
+                                .onAppear() {
+                                    // no need for UI updates at startup
+                                    stopTimer()
+                                }
+                            Text("Duration")
+                                .font(.caption)
+                        }
+                        
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text(distanceString)
+                                .font(.title.bold())
+                            Text("Distance (Miles)")
+                                .font(.caption)
+                        }
+                        
+                        Spacer()
+                    }
+                    .padding(.horizontal)
+                }
                 
                 if showButtons {
                     HStack(spacing: 10) {
@@ -94,11 +91,11 @@ struct RecordDriveView: View {
                                     .resizable()
                                     .scaledToFit()
                                     .frame(width: 20, height: 20)
-                                    .foregroundStyle(.black)
+                                    .foregroundStyle(.white)
                                     .frame(width: 55, height: 55)
                                     .background {
                                         Circle()
-                                            .fill(Color.white)
+                                            .fill(Color(uiColor: .systemGray5))
                                     }
                             }
                         }
@@ -134,9 +131,6 @@ struct RecordDriveView: View {
                                 .clipShape(RoundedRectangle(cornerRadius: 15))
                         }
                         .disabled(driveManager.currentLocation == nil)
-                        
-                        Spacer()
-                        
                     }
                     .padding([.bottom, .horizontal])
                 } else {
@@ -145,6 +139,7 @@ struct RecordDriveView: View {
                         .padding([.bottom, .horizontal])
                 }
             }
+            .ignoresSafeArea(edges: [.top])
         }
     }
     
