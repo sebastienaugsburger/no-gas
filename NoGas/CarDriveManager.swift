@@ -9,14 +9,27 @@ import SwiftUI
 import CoreLocation
 import SwiftData
 
+struct MonthCard: Identifiable, Hashable {
+    let id = UUID()
+    let name: String
+    let date: Date
+    
+    init(name: String, date: Date) {
+        self.name = name
+        self.date = date
+    }
+}
+
 @Model
 class DriveLocation {
     var latitude: Double
     var longitude: Double
+    var createdAt: Date = Date.now
     
-    init(latitude: Double, longitude: Double) {
+    init(latitude: Double, longitude: Double, createdAt: Date) {
         self.latitude = latitude
         self.longitude = longitude
+        self.createdAt = createdAt
     }
 }
 
@@ -26,7 +39,77 @@ class Drive: Identifiable {
     var startTime: Date
     var endTime: Date?
     var distance: Double = 0.0 // meters
+    var fuelValue: Double = 0.0
     @Relationship(deleteRule: .cascade) var locations: [DriveLocation] = []
+    
+    var startTimeStr: String {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "MMM d, yyyy h:mma"
+        return dateFormatter.string(from: startTime)
+    }
+    
+    var absFuelValue: Double {
+        abs(fuelValue)
+    }
+    
+    var orderedLocations: [DriveLocation] {
+        locations.sorted(by: { $0.createdAt < $1.createdAt })
+    }
+    
+    var miles: Double {
+        distance / 1609.34
+    }
+    
+    var hrCount: Int {
+        let startTime = startTime
+        let endTime = endTime ?? .now
+        
+        var hrCount = 0
+        if let hour = Calendar.current.dateComponents([.hour], from: startTime, to: endTime).hour {
+            hrCount = hour % 60
+        }
+        return hrCount
+    }
+    
+    var minCount: Int {
+        let startTime = startTime
+        let endTime = endTime ?? .now
+        
+        var minCount = 0
+        if let minute = Calendar.current.dateComponents([.minute], from: startTime, to: endTime).minute {
+            minCount = minute % 60
+        }
+        return minCount
+    }
+    
+    var secCount: Int {
+        let startTime = startTime
+        let endTime = endTime ?? .now
+        
+        var secCount = 0
+        if let second = Calendar.current.dateComponents([.second], from: startTime, to: endTime).second {
+            secCount = second % 60
+        }
+        return secCount
+    }
+    
+    var secCountTotal: Int {
+        let startTime = startTime
+        let endTime = endTime ?? .now
+        
+        var secCount = 0
+        if let second = Calendar.current.dateComponents([.second], from: startTime, to: endTime).second {
+            secCount = second
+        }
+        return secCount
+    }
+    
+    var milesPerHour: Double {
+        let metersPerSec = (distance) / Double(secCountTotal)
+        let metersPerHour = metersPerSec * 3600
+        let milesPerHour = metersPerHour / 1609.34
+        return milesPerHour
+    }
     
     init(startTime: Date) {
         self.startTime = startTime
@@ -49,12 +132,11 @@ class DriveManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         /* Enable the app to collect location updates while it's in the background */
         self.locationManager.allowsBackgroundLocationUpdates = true
         self.locationManager.pausesLocationUpdatesAutomatically = false
-        // Set location accuracy value
-        self.locationManager.desiredAccuracy = kCLLocationAccuracyKilometer //kCLLocationAccuracyBestForNavigation
         /* Set activity type for Core Location so that Core Location
         makes small adjustments to the reported location to match known roads */
         self.locationManager.activityType = .automotiveNavigation
         self.locationManager.startUpdatingLocation()
+        print("drive manager init")
     }
     
     func startRecording() {
@@ -70,6 +152,11 @@ class DriveManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         //locationManager.stopUpdatingLocation()
         if drive.locations.count > 1 {
             context.insert(drive)
+            do {
+                try context.save()
+            } catch {
+                print("Failed to save context: \(error)")
+            }
         }
         self.currentDrive = nil
     }
@@ -83,6 +170,7 @@ class DriveManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             self.hasCurrentLocation = true
             self.currentLocation = newLocation.coordinate
         //}
+        guard let createdAt = locations.last?.timestamp else { return }
         
         if isRecording {
             if let last = lastLocation {
@@ -94,8 +182,7 @@ class DriveManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             
             let latitude = newLocation.coordinate.latitude
             let longitude = newLocation.coordinate.longitude
-            
-            let driveLocation = DriveLocation(latitude: latitude, longitude: longitude)
+            let driveLocation = DriveLocation(latitude: latitude, longitude: longitude, createdAt: createdAt)
             
             //DispatchQueue.main.async {
                 self.currentDrive?.locations.append(driveLocation)

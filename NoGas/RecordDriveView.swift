@@ -12,17 +12,24 @@ struct RecordDriveView: View {
     @StateObject private var driveManager = DriveManager()
     @Environment(\.modelContext) private var modelContext
     
+    @AppStorage("evCar") var evCar: Bool = true
+    @AppStorage("gasPrice") var gasPrice: Double = 4.07
+    @AppStorage("mpg") var mpg: Int = 32
+    //@AppStorage("fuelCostBalance") var fuelCostBalance: Double = 0.0
+    //@AppStorage("milesTraveled") var milesTraveled: Double = 0.0
+    //@AppStorage("driveCount") var driveCount: Int = 0
+    
     @Binding var showRecordDriveView: Bool
     
     @State private var position: MapCameraPosition = .automatic
     @State private var region = MKCoordinateRegion(
             center: CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194), // Default: San Francisco
-            span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+            span: MKCoordinateSpan(latitudeDelta: 0.003, longitudeDelta: 0.003)
         )
     
     @State var isTimerRunning = false
     @State private var startTime =  Date()
-    @State private var timerString = "0.00"
+    @State private var timerString = "00:00:00"
     @State private var timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     
     @State private var showButtons: Bool = true
@@ -34,122 +41,158 @@ struct RecordDriveView: View {
     }
     
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 20) {
-                VStack (alignment: .leading, spacing: 20) {
-                    ZStack {
-                        Color(uiColor: .systemGray6)
-                        //Map(position: .constant(.region(region)), interactionModes: .all)
-                        DriveMapView(region: $region)
+        GeometryReader { geo in
+            NavigationStack {
+                VStack(spacing: 20) {
+                    VStack (alignment: .leading, spacing: 20) {
+                        ZStack(alignment: .topLeading) {
+                            Color(uiColor: .systemGray6)
+                            //Map(position: .constant(.region(region)), interactionModes: .all)
+                            DriveMapView(region: $region)
                             
-                    }
-                    
-                    .cornerRadius(20)
-                    .environmentObject(driveManager)
-                    .onChange(of: driveManager.hasCurrentLocation) { newLocation, oldLocation in
-                        guard let cuLocation = driveManager.currentLocation else { return }
-                        region.center = cuLocation
-                    }
-                    
-                    HStack(spacing: 20) {
-                        VStack(alignment: .leading, spacing: 0) {
-                            Text(timerString)
-                                .font(.title.bold())
-                                .onReceive(timer) { _ in
-                                    if isTimerRunning {
-                                        timerString = String(format: "%.0fs", (Date().timeIntervalSince(startTime)))
+                            if driveManager.isRecording == false {
+                                Button {
+                                    showRecordDriveView = false
+                                } label: {
+                                    Image(systemName: "xmark")
+                                        .resizable()
+                                        .scaledToFit()
+                                        .frame(width: 18, height: 18)
+                                        .foregroundStyle(.white)
+                                        .frame(width: 50, height: 50)
+                                        .background {
+                                            Circle()
+                                                .fill(Color(uiColor: .systemGray5))
+                                        }
+                                }
+                                .padding(.horizontal)
+                                .padding(.top, geo.safeAreaInsets.top + 20)
+                            }
+                        }
+                        .cornerRadius(20)
+                        .environmentObject(driveManager)
+                        .onChange(of: driveManager.hasCurrentLocation) { newLocation, oldLocation in
+                            guard let cuLocation = driveManager.currentLocation else { return }
+                            region.center = cuLocation
+                        }
+                        
+                        HStack(spacing: 20) {
+                            VStack(alignment: .leading, spacing: 0) {
+                                Text(distanceString)
+                                    .font(.title.bold())
+                                + Text("mi")
+                                    .font(.title3)
+                                Text("Distance")
+                                    .font(.caption)
+                            }
+                            
+                            VStack(alignment: .leading, spacing: 0) {
+                                Text(timerString)
+                                    .font(.title.bold())
+                                    .onReceive(timer) { _ in
+                                        if isTimerRunning {
+                                            timerString = tripDurationString(current: .now, previous: startTime)
+                                        }
                                     }
-                                }
-                                .onAppear() {
-                                    // no need for UI updates at startup
-                                    stopTimer()
-                                }
-                            Text("Duration")
-                                .font(.caption)
+                                    .onAppear() {
+                                        // no need for UI updates at startup
+                                        stopTimer()
+                                    }
+                                Text("Duration")
+                                    .font(.caption)
+                            }
+                            
+                            Spacer()
                         }
-                        
-                        VStack(alignment: .leading, spacing: 0) {
-                            Text(distanceString)
-                                .font(.title.bold())
-                            Text("Distance (Miles)")
-                                .font(.caption)
-                        }
-                        
-                        Spacer()
+                        .padding(.horizontal)
                     }
-                    .padding(.horizontal)
-                }
-                
-                if showButtons {
-                    HStack(spacing: 10) {
-                        
-                        if driveManager.isRecording == false {
+                    
+                    if showButtons {
+                        HStack(spacing: 10) {
+                            // Start/Stop drive recording
                             Button {
-                                showRecordDriveView = false
+                                if driveManager.isRecording {
+                                    self.showButtons = false
+                                    if let drive = driveManager.currentDrive {
+                                        drive.fuelValue = (drive.distance / 1609.34)/Double(mpg) * gasPrice
+                                        if evCar {
+                                            drive.fuelValue = drive.fuelValue * -1
+                                        }
+                                        //fuelCostBalance += drive.fuelValue
+                                        //milesTraveled += drive.distance / 1609.34
+                                        //driveCount += 1
+                                    }
+                                    self.driveManager.stopRecording(context: modelContext)
+                                    self.showRecordDriveView = false
+                                } else {
+                                    self.driveManager.startRecording()
+                                }
+                                
+                                if self.isTimerRunning {
+                                    // stop UI updates
+                                    self.stopTimer()
+                                } else {
+                                    
+                                    self.startTime = Date()
+                                    // start UI updates
+                                    self.startTimer()
+                                }
+                                isTimerRunning.toggle()
+                                
+                                
                             } label: {
-                                Image(systemName: "xmark")
-                                    .resizable()
-                                    .scaledToFit()
-                                    .frame(width: 20, height: 20)
-                                    .foregroundStyle(.white)
-                                    .frame(width: 55, height: 55)
-                                    .background {
-                                        Circle()
-                                            .fill(Color(uiColor: .systemGray5))
+                                Label(driveManager.isRecording ? "End drive" : "Start drive", systemImage: "steeringwheel")
+                                    .font(.title3.bold())
+                                    .foregroundColor(driveManager.isRecording ? Color.white:Color.black)
+                                    .frame(maxWidth: .infinity, minHeight: 55, maxHeight: 55)
+                                    .background{
+                                        RoundedRectangle(cornerRadius: 15)
+                                            .fill(driveManager.isRecording ? Color.red : Color.accentColor)
                                     }
                             }
+                            .disabled(driveManager.currentLocation == nil)
                         }
-                        
-                        // Start/Stop drive recording
-                        Button {
-                            if driveManager.isRecording {
-                                self.showButtons = false
-                                self.driveManager.stopRecording(context: modelContext)
-                                self.showRecordDriveView = false
-                            } else {
-                                self.driveManager.startRecording()
-                            }
-                            
-                            if self.isTimerRunning {
-                                // stop UI updates
-                                self.stopTimer()
-                            } else {
-                                
-                                self.startTime = Date()
-                                // start UI updates
-                                self.startTimer()
-                            }
-                            isTimerRunning.toggle()
-                            
-                            
-                        } label: {
-                            Label(driveManager.isRecording ? "End drive" : "Start drive", systemImage: "steeringwheel")
-                                .font(.title3.bold())
-                                .frame(maxWidth: .infinity, minHeight: 55, maxHeight: 55)
-                                .background(driveManager.isRecording ? Color.red : Color.green)
-                                .foregroundColor(.white)
-                                .clipShape(RoundedRectangle(cornerRadius: 15))
-                        }
-                        .disabled(driveManager.currentLocation == nil)
-                    }
-                    .padding([.bottom, .horizontal])
-                } else {
-                    Color.clear
-                        .frame(height: 55)
                         .padding([.bottom, .horizontal])
+                    } else {
+                        Color.clear
+                            .frame(height: 55)
+                            .padding([.bottom, .horizontal])
+                    }
                 }
+                .ignoresSafeArea(edges: [.top])
             }
-            .ignoresSafeArea(edges: [.top])
         }
     }
     
     func stopTimer() {
         self.timer.upstream.connect().cancel()
-        timerString = "0.00"
+        timerString = "00:00:00"
     }
         
     func startTimer() {
         self.timer = Timer.publish(every: 0.01, on: .main, in: .common).autoconnect()
+    }
+    
+    func tripDurationString(current: Date, previous: Date) -> String {
+        var hrStr = ""
+        var minStr = ""
+        var secStr = ""
+        
+        if let hour = Calendar.current.dateComponents([.hour], from: previous, to: current).hour {
+            hrStr = hour > 9 ? "\(hour)":"0\(hour)"
+        }
+        
+        if let minute = Calendar.current.dateComponents([.minute], from: previous, to: current).minute {
+            let minCount = minute % 60
+            minStr = minCount > 9 ? "\(minCount)":"0\(minCount)"
+        }
+        
+        if let second = Calendar.current.dateComponents([.second], from: previous, to: current).second {
+            let secCount = second % 60
+            secStr = secCount > 9 ? "\(secCount)":"0\(secCount)"
+        }
+
+        return "\(hrStr):\(minStr):\(secStr)"
     }
 }
 
@@ -164,8 +207,7 @@ struct DriveMapView: View {
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
-            
-                MapViewRepresentable(region: $region, updateLocation: $updateLocation)
+            RecordDriveMapViewRepresentable(driveManager: driveManager, region: $region, updateLocation: $updateLocation)
                     .simultaneousGesture(
                         MagnifyGesture()
                             .onChanged { value in
@@ -208,7 +250,70 @@ struct DriveMapView: View {
 }
 
 
-struct MapViewRepresentable: UIViewRepresentable {
+struct ReviewDriveMapViewRepresentable: UIViewRepresentable {
+    let driveLocations: [DriveLocation]
+    //@Binding var region: MKCoordinateRegion
+    //@Binding var updateLocation: Bool
+
+    private let mapView = MKMapView()
+
+    func makeUIView(context: Context) -> MKMapView {
+        mapView.delegate = context.coordinator
+        //mapView.showsUserLocation = true
+        //mapView.userTrackingMode = .follow // Automatically follows user
+        return mapView
+    }
+
+    func updateUIView(_ uiView: MKMapView, context: Context) {
+//        if updateLocation {
+//            uiView.setRegion(region, animated: true)
+//        }
+        updatePolyline(uiView)
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    class Coordinator: NSObject, MKMapViewDelegate {
+        var parent: ReviewDriveMapViewRepresentable
+
+        init(_ parent: ReviewDriveMapViewRepresentable) {
+            self.parent = parent
+        }
+        
+        func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
+            if let polyline = overlay as? MKPolyline {
+                let renderer = MKPolylineRenderer(polyline: polyline)
+                renderer.strokeColor = UIColor.accent
+                renderer.lineWidth = 5
+                return renderer
+            }
+            return MKOverlayRenderer()
+        }
+    }
+    
+    private func updatePolyline(_ mapView: MKMapView) {
+        mapView.removeOverlays(mapView.overlays)
+        //if let driveLocations = driveManager.currentDrive?.locations {
+            var locations = [CLLocation]()
+            for driveLocation in driveLocations {
+                let clLocation = CLLocation(latitude: driveLocation.latitude, longitude: driveLocation.longitude)
+                locations.append(clLocation)
+            }
+            if locations.count > 1 {
+                let coordinates = locations.map { $0.coordinate }
+                let polyline = MKPolyline(coordinates: coordinates, count: coordinates.count)
+                mapView.addOverlay(polyline)
+                mapView.setVisibleMapRect(polyline.boundingMapRect, edgePadding: UIEdgeInsets(top: 40, left: 40, bottom: 40, right: 40), animated: true)
+               
+            }
+        //}
+    }
+}
+
+struct RecordDriveMapViewRepresentable: UIViewRepresentable {
+    @ObservedObject var driveManager: DriveManager
     @Binding var region: MKCoordinateRegion
     @Binding var updateLocation: Bool
 
@@ -225,6 +330,7 @@ struct MapViewRepresentable: UIViewRepresentable {
         if updateLocation {
             uiView.setRegion(region, animated: true)
         }
+        updatePolyline(uiView)
     }
 
     func makeCoordinator() -> Coordinator {
@@ -232,10 +338,37 @@ struct MapViewRepresentable: UIViewRepresentable {
     }
 
     class Coordinator: NSObject, MKMapViewDelegate {
-        var parent: MapViewRepresentable
+        var parent: RecordDriveMapViewRepresentable
 
-        init(_ parent: MapViewRepresentable) {
+        init(_ parent: RecordDriveMapViewRepresentable) {
             self.parent = parent
+        }
+        
+        func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
+            if let polyline = overlay as? MKPolyline {
+                let renderer = MKPolylineRenderer(polyline: polyline)
+                renderer.strokeColor = UIColor.accent
+                renderer.lineWidth = 5
+                return renderer
+            }
+            return MKOverlayRenderer()
+        }
+    }
+    
+    private func updatePolyline(_ mapView: MKMapView) {
+        mapView.removeOverlays(mapView.overlays)
+        if let driveLocations = driveManager.currentDrive?.orderedLocations {
+            var locations = [CLLocation]()
+            for driveLocation in driveLocations {
+                let clLocation = CLLocation(latitude: driveLocation.latitude, longitude: driveLocation.longitude)
+                locations.append(clLocation)
+            }
+            if locations.count > 1 {
+                let coordinates = locations.map { $0.coordinate }
+                let polyline = MKPolyline(coordinates: coordinates, count: coordinates.count)
+                mapView.addOverlay(polyline)
+                //mapView.setVisibleMapRect(polyline.boundingMapRect, edgePadding: UIEdgeInsets(top: 20, left: 20, bottom: 20, right: 20), animated: true)
+            }
         }
     }
 }
