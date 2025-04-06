@@ -484,6 +484,7 @@ struct DrivePreviewView: View {
             return CLLocation(latitude: $0.latitude, longitude: $0.longitude).coordinate
         }
         
+        
         let options = MKMapSnapshotter.Options()
         //create a bounding box around your coordinate array.
         let polyline = MKPolyline(coordinates: coordinates, count: coordinates.count)
@@ -500,41 +501,86 @@ struct DrivePreviewView: View {
         options.size = CGSize(width: mapWidth, height: mapHeight) // Adjust size as needed
 
         let snapshotter = MKMapSnapshotter(options: options)
+        
+        
         snapshotter.start { snapshot, error in
-            if let snapshot = snapshot {
-                
-                // Create an image context to draw the polyline
-                UIGraphicsBeginImageContextWithOptions(options.size, false, options.scale)
-                snapshot.image.draw(at: .zero)
-
-                // Draw the polyline on the snapshot
-                let context = UIGraphicsGetCurrentContext()
-                context?.setStrokeColor(UIColor.accent.cgColor)
-                context?.setLineWidth(5)
-
-                let points = polyline.points()
-                let path = UIBezierPath()
-                
-                for i in 0..<polyline.pointCount - 1 {
-                    let coordinate = points[i].coordinate
-                    let point = snapshot.point(for: coordinate)
-                    
-                    if i == 0 {
-                        path.move(to: point)
-                    } else {
-                        path.addLine(to: point)
-                    }
-                }
-                
-                context?.addPath(path.cgPath)
-                context?.strokePath()
-
-                let finalImage = UIGraphicsGetImageFromCurrentImageContext()
-                UIGraphicsEndImageContext()
-                
-                snapshotImage = finalImage
+            
+            guard let snapshot = snapshot else {
+                return
             }
+            
+            let inputImage = drawLineOnImage(snapshot, options: options, coordinates: coordinates)
+            
+            snapshotImage = inputImage
+            
+//            if let snapshot = snapshot {
+//
+//                // Create an image context to draw the polyline
+//                UIGraphicsBeginImageContextWithOptions(options.size, false, options.scale)
+//                snapshot.image.draw(at: .zero)
+//
+//                // Draw the polyline on the snapshot
+//                let context = UIGraphicsGetCurrentContext()
+//                context?.setStrokeColor(UIColor.accent.cgColor)
+//                context?.setLineWidth(5)
+//
+//                let points = polyline.points()
+//                let path = UIBezierPath()
+//
+//                for i in 0..<polyline.pointCount - 1 {
+//                    let coordinate = points[i].coordinate
+//                    let point = snapshot.point(for: coordinate)
+//
+//                    if i == 0 {
+//                        path.move(to: point)
+//                    } else {
+//                        path.addLine(to: point)
+//                    }
+//                }
+//
+//                context?.addPath(path.cgPath)
+//                context?.strokePath()
+//
+//                let finalImage = UIGraphicsGetImageFromCurrentImageContext()
+//                UIGraphicsEndImageContext()
+//
+//                snapshotImage = finalImage
+//            }
         }
+    }
+    
+    func drawLineOnImage(_ snapshot: MKMapSnapshotter.Snapshot, options: MKMapSnapshotter.Options, coordinates: [CLLocationCoordinate2D]) -> UIImage? {
+        let image = snapshot.image
+        let size = options.size
+        // for Retina
+        UIGraphicsBeginImageContextWithOptions(size, true, 0.0)
+        
+        // draw image into ui graphics image context
+        image.draw(at: CGPoint.zero)
+        
+        // get the context for CoreGraphics
+        let context = UIGraphicsGetCurrentContext()
+        
+        if let context = context, let firstCoordinate = coordinates.first {
+            // set stroking width and color of the context
+            context.setLineWidth(5.0)
+            context.setStrokeColor(UIColor.accent.cgColor)
+            // move to start to begin drawing line
+            context.move(to: snapshot.point(for: firstCoordinate))
+            
+            for i in 0...coordinates.count - 1 {
+                context.addLine(to: snapshot.point(for: coordinates[i]))
+                context.move(to: snapshot.point(for: coordinates[i]))
+            }
+            
+            context.strokePath()
+        }
+        
+        let result  = UIGraphicsGetImageFromCurrentImageContext()
+        
+        UIGraphicsEndImageContext()
+        
+        return result != nil ? result : nil
     }
 }
 
