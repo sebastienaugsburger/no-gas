@@ -168,7 +168,7 @@ struct HomeStatsView: View {
                                                         .font(.title)
                                                     + Text(String(format: "%.2f", gasPrice))
                                                         .font(.title.bold())
-                                                    Text("Fuel price")
+                                                    Text("Fuel price/gal.")
                                                 }
                                                 
                                                 Spacer()
@@ -372,31 +372,36 @@ struct DrivePreviewView: View {
     var mapHeight: CGFloat = 200
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 15) {
-            ZStack(alignment: .topLeading) {
-                if let image = snapshotImage {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFit()
-                } else {
-                    Color.white.opacity(0.001)
-                        .onAppear {
-                            generateSnapshot()
-                        }
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 10) {
+                
+                // Image drive route
+                ZStack(alignment: .topLeading) {
+                    if let image = snapshotImage {
+                        Image(uiImage: image)
+                            .resizable()
+                            .scaledToFit()
+                    } else {
+                        Color.white.opacity(0.001)
+                            .scaledToFit()
+                            .onAppear {
+                                generateSnapshot()
+                            }
+                    }
                 }
-            }
-            .frame(width: mapWidth, height: mapHeight)
-            .clipShape(RoundedRectangle(cornerRadius: 20))
-            
-            VStack(alignment: .leading, spacing: 15) {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 20) {
+                .frame(height: 250)
+                .clipShape(RoundedRectangle(cornerRadius: 15))
+                //.padding(.horizontal)
+                
+                // Drive stats
+                //ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 15) {
                         VStack(alignment: .leading, spacing: 0) {
                             Text("$")
-                                .font(.title)
+                                .font(.title2)
                                 .foregroundStyle(drive.fuelValue > 0 ? Color.red:Color.green)
                             + Text(String(format: "%.2f", drive.absFuelValue))
-                                .font(.title.bold())
+                                .font(.title2.bold())
                                 .foregroundStyle(drive.fuelValue > 0 ? Color.red:Color.green)
                             Text("Fuel cost")
                                 .font(.caption)
@@ -404,7 +409,7 @@ struct DrivePreviewView: View {
                         
                         VStack(alignment: .leading, spacing: 0) {
                             Text("\(drive.miles, specifier: "%.2f")")
-                                .font(.title.bold())
+                                .font(.title2.bold())
                             + Text("mi")
                                 .font(.title3)
                             Text("Distance")
@@ -415,16 +420,16 @@ struct DrivePreviewView: View {
                             HStack(spacing: 5) {
                                 if drive.hrCount > 0 {
                                     Text("\(drive.hrCount)")
-                                        .font(.title.bold())
+                                        .font(.title2.bold())
                                     + Text("h")
                                         .font(.title3)
                                 }
                                 Text("\(drive.minCount)")
-                                    .font(.title.bold())
+                                    .font(.title2.bold())
                                 + Text("m")
                                     .font(.title3)
                                 Text("\(drive.secCount)")
-                                    .font(.title.bold())
+                                    .font(.title2.bold())
                                 + Text("s")
                                     .font(.title3)
                             }
@@ -434,40 +439,41 @@ struct DrivePreviewView: View {
                         
                         VStack(alignment: .leading, spacing: 0) {
                             Text("\(drive.milesPerHour, specifier: "%.2f")")
-                                .font(.title.bold())
+                                .font(.title2.bold())
                             + Text("mph")
                                 .font(.title3)
                             Text("Avg. Speed")
                                 .font(.caption)
                         }
                     }
-                    .padding(.horizontal)
-                }
-                
-                HStack {
-                    Text(drive.startTimeStr)
-                        .font(.headline)
-                        .shadow(color: .black, radius: 5)
-                    
-                    Spacer()
-                    
-                    Button {
-                        self.selectedDrive = drive
-                    } label: {
-                        Image(systemName: "ellipsis")
-                            .foregroundStyle(.white)
-                            .frame(width: 30, height: 30)
-                            .background {
-                                Circle()
-                                    .fill(Color(uiColor: .systemGray4))
-                            }
-                    }
-                }
-                .padding(.horizontal)
+                //}
             }
-            .padding(.bottom, 10)
+            .padding(.horizontal)
+            
+            // Drive start time
+            HStack {
+                Text(drive.startTimeStr)
+                    .font(.system(size: 15, weight: .semibold))
+                    //.shadow(color: .black, radius: 5)
+                
+                Spacer()
+                
+                Button {
+                    self.selectedDrive = drive
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .foregroundStyle(.white)
+                        //.frame(width: 25, height: 25)
+                        .background {
+                            Rectangle()
+                                .fill(Color.gray.opacity(0.001))
+                        }
+                }
+            }
+            .padding(.horizontal)
         }
         .foregroundStyle(.white)
+        .padding(.vertical)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background {
             RoundedRectangle(cornerRadius: 20)
@@ -484,7 +490,6 @@ struct DrivePreviewView: View {
             return CLLocation(latitude: $0.latitude, longitude: $0.longitude).coordinate
         }
         
-        
         let options = MKMapSnapshotter.Options()
         //create a bounding box around your coordinate array.
         let polyline = MKPolyline(coordinates: coordinates, count: coordinates.count)
@@ -498,7 +503,7 @@ struct DrivePreviewView: View {
         
         options.mapRect = mapRect
         options.scale = UIScreen.main.scale
-        options.size = CGSize(width: mapWidth, height: mapHeight) // Adjust size as needed
+        //options.size = CGSize(width: mapWidth, height: mapHeight) // Adjust size as needed
 
         let snapshotter = MKMapSnapshotter(options: options)
         
@@ -552,9 +557,9 @@ struct DrivePreviewView: View {
     func drawLineOnImage(_ snapshot: MKMapSnapshotter.Snapshot, options: MKMapSnapshotter.Options, coordinates: [CLLocationCoordinate2D]) -> UIImage? {
         let image = snapshot.image
         let size = options.size
+        let scale = options.traitCollection.displayScale
         // for Retina
-        UIGraphicsBeginImageContextWithOptions(size, true, 0.0)
-        
+        UIGraphicsBeginImageContextWithOptions(size, false, scale)
         // draw image into ui graphics image context
         image.draw(at: CGPoint.zero)
         
@@ -563,7 +568,7 @@ struct DrivePreviewView: View {
         
         if let context = context, let firstCoordinate = coordinates.first {
             // set stroking width and color of the context
-            context.setLineWidth(5.0)
+            context.setLineWidth(7.0)
             context.setStrokeColor(UIColor.accent.cgColor)
             // move to start to begin drawing line
             context.move(to: snapshot.point(for: firstCoordinate))

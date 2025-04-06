@@ -286,7 +286,7 @@ struct ReviewDriveMapViewRepresentable: UIViewRepresentable {
             if let polyline = overlay as? MKPolyline {
                 let renderer = MKPolylineRenderer(polyline: polyline)
                 renderer.strokeColor = UIColor.accent
-                renderer.lineWidth = 5
+                renderer.lineWidth = 7.0
                 return renderer
             }
             return MKOverlayRenderer()
@@ -305,7 +305,7 @@ struct ReviewDriveMapViewRepresentable: UIViewRepresentable {
                 let coordinates = locations.map { $0.coordinate }
                 let polyline = MKPolyline(coordinates: coordinates, count: coordinates.count)
                 mapView.addOverlay(polyline)
-                mapView.setVisibleMapRect(polyline.boundingMapRect, edgePadding: UIEdgeInsets(top: 40, left: 40, bottom: 40, right: 40), animated: true)
+                mapView.setVisibleMapRect(polyline.boundingMapRect, edgePadding: UIEdgeInsets(top: 100, left: 40, bottom: 100, right: 40), animated: true)
                
             }
         //}
@@ -348,7 +348,7 @@ struct RecordDriveMapViewRepresentable: UIViewRepresentable {
             if let polyline = overlay as? MKPolyline {
                 let renderer = MKPolylineRenderer(polyline: polyline)
                 renderer.strokeColor = UIColor.accent
-                renderer.lineWidth = 5
+                renderer.lineWidth = 7.0
                 return renderer
             }
             return MKOverlayRenderer()
