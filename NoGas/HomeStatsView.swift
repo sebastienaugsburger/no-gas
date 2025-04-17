@@ -79,24 +79,17 @@ struct DataService {
 
 struct HomeStatsView: View {
     
+    @StateObject private var driveManager = DriveManager()
     @Environment(\.modelContext) private var modelContext
     
-    @State private var mostRecentDrive: Drive?
-    @State private var selectedDrive: Drive?
-    
-    //@Query(sort: \Drive.startTime, order: .reverse) var drives: [Drive]
-    
     @AppStorage("evCar") var evCar: Bool = true
-    //@AppStorage("fuelCostBalance") var fuelCostBalance: Double = 0.00
-    //@AppStorage("milesTraveled") var milesTraveled: Double = 0
-    //@AppStorage("driveCount") var driveCount: Int = 0
     @AppStorage("gasPrice") var gasPrice: Double = 4.07
     @AppStorage("mpg") var mpg: Int = 32
     
-    //@State private var showAddTripView: Bool = false
+    @State private var selectedDrive: Drive?
     @State private var showRecordDrive: Bool = false
-    
     @State var monthCards: [MonthCard] = []
+    @State private var showMostRecentTripReviewView = false
     
 //    var absFuelCostBalance: Double {
 //        abs(fuelCostBalance)
@@ -106,18 +99,33 @@ struct HomeStatsView: View {
         GeometryReader { geo in
             let viewWidth = geo.size.width
             NavigationStack {
-                VStack(spacing: 0) {
-                    ScrollView {
+                ZStack(alignment: .bottomTrailing) {
+                    ScrollView(showsIndicators: false) {
                         VStack(spacing: 20) {
-                            Toggle("Electric Vehicle (EV)", isOn: $evCar)
-                                .bold()
-                                .tint(.accentColor)
-                                .padding()
-                                .background {
-                                    RoundedRectangle(cornerRadius: 15)
-                                        .fill(Color(uiColor: .systemGray5))
-                                }
-                                .padding(.horizontal, 20)
+                            Button {
+                                showRecordDrive = true
+                            } label: {
+                                Text("New trip")
+                                    .font(.system(size: 21, weight: .semibold))
+                                    .foregroundStyle(.black)
+                                    .frame(minWidth: .zero, maxWidth: .infinity, minHeight: 60)
+                                    .background {
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .fill(.accent)
+                                    }
+                            }
+                            .fullScreenCover(isPresented: $showRecordDrive) {
+                                RecordDriveView(showRecordDriveView: $showRecordDrive)
+                                    .environmentObject(driveManager)
+                                    .onAppear {
+                                        self.driveManager.startUpdatingLocation()
+                                    }
+                                    .onDisappear {
+                                        self.driveManager.stopUpdatingLocation()
+                                        prepareSnapShotAndMonthsList()
+                                    }
+                            }
+                            .padding(.horizontal, 20)
                             
                             VStack(spacing: 20) {
 //                                Group {
@@ -162,76 +170,98 @@ struct HomeStatsView: View {
                                         NavigationLink {
                                             EditGasPriceView(gasPrice: $gasPrice)
                                         } label: {
-                                            HStack(alignment: .top) {
+                                            HStack {
                                                 VStack(alignment: .leading) {
                                                     Text("$")
                                                         .font(.title)
                                                     + Text(String(format: "%.2f", gasPrice))
                                                         .font(.title.bold())
                                                     Text("Fuel price/gal.")
+                                                        .foregroundStyle(.gray)
                                                 }
                                                 
                                                 Spacer()
                                                 
-                                                Image(systemName: "pencil")
+                                                Image(systemName: "chevron.right")
+                                                    .foregroundStyle(.gray)
                                             }
                                             .foregroundStyle(Color.primary)
                                             .padding(.horizontal)
                                             .frame(width: viewWidth/2 - 25, alignment: .leading)
                                             .padding(.vertical)
                                             .background {
-                                                RoundedRectangle(cornerRadius: 15)
+                                                RoundedRectangle(cornerRadius: 12)
                                                     .fill(Color(uiColor: UIColor.systemGray5))
                                             }
                                         }
                                         NavigationLink {
                                             EditMPGView(mpg: $mpg)
                                         } label: {
-                                            HStack(alignment: .top) {
+                                            HStack {
                                                 VStack(alignment: .leading) {
                                                     Text("\(mpg)")
                                                         .font(.title.bold())
                                                     Text("MPG")
+                                                        .foregroundStyle(.gray)
                                                 }
                                                 
                                                 Spacer()
                                                 
-                                                Image(systemName: "pencil")
+                                                Image(systemName: "chevron.right")
+                                                    .foregroundStyle(.gray)
                                             }
                                             .foregroundStyle(Color.primary)
                                             .padding(.horizontal)
                                             .frame(width: viewWidth/2 - 25, alignment: .leading)
                                             .padding(.vertical)
                                             .background {
-                                                RoundedRectangle(cornerRadius: 15)
+                                                RoundedRectangle(cornerRadius: 12)
                                                     .fill(Color(uiColor: UIColor.systemGray5))
                                             }
                                         }
                                     }
                                     .padding(.horizontal, 20)
                                 }
+                                
+                                Toggle("Electric Vehicle", isOn: $evCar)
+                                    .bold()
+                                    .tint(.accentColor)
+                                    .frame(minWidth: .zero, maxWidth: .infinity, minHeight: 60)
+                                    .padding(.horizontal)
+                                    .background {
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .fill(Color(uiColor: .systemGray5))
+                                    }
+                                    .padding(.horizontal, 20)
                             }
                             
-                            if let mostRecentDrive = self.mostRecentDrive {
-                                Group {
+                            if let drive = self.driveManager.mostRecentDrive {
+                                VStack(alignment: .leading, spacing: 10) {
                                     HStack {
-                                        Text("Most recent drive")
+                                        Text("Most recent")
                                             .font(.title3.bold())
                                         Spacer()
                                     }
-                                    .padding(.horizontal, 20)
-                                    DrivePreviewView(drive: mostRecentDrive, width: viewWidth, selectedDrive: $selectedDrive)
-                                        .padding(.horizontal, 20)
+                                    
+                                    DrivePreviewView(drive: drive, width: viewWidth, selectedDrive: $selectedDrive)
+                                        .onTapGesture {
+                                            self.showMostRecentTripReviewView = true
+                                        }
+                                        .navigationDestination(isPresented: $showMostRecentTripReviewView) {
+                                            if let drive = self.driveManager.mostRecentDrive {
+                                                ReviewDriveView(drive: drive)
+                                            }
+                                        }
                                 }
+                                .padding(.horizontal, 20)
                             }
                             
-                            Group {
+                            VStack(alignment: .leading, spacing: 10) {
                                 HStack {
-                                    Text("History")
+                                    Text("Trips")
                                         .font(.title3.bold())
                                     Spacer()
                                 }
-                                .padding(.horizontal, 20)
                                 
                                 VStack(spacing: 20) {
                                     ForEach(monthCards) { card in
@@ -240,50 +270,21 @@ struct HomeStatsView: View {
                                                 .bold()
                                                 .foregroundStyle(.white)
                                                 .padding(.horizontal)
-                                                .frame(maxWidth: .infinity, minHeight: 55, maxHeight: 55, alignment: .leading)
+                                                .frame(maxWidth: .infinity, minHeight: 60, alignment: .leading)
                                                 .background {
-                                                    RoundedRectangle(cornerRadius: 13)
+                                                    RoundedRectangle(cornerRadius: 12)
                                                         .fill(Color(uiColor: .systemGray5))
                                                 }
                                         }
                                     }
                                 }
-                                .padding(.horizontal, 20)
-
                             }
+                            .padding(.horizontal, 20)
+                            .padding(.bottom)
                         }
                         .padding(.vertical)
                     }
-                    
-                    ZStack(alignment: .top)  {
-                        Button {
-                            showRecordDrive = true
-                        } label: {
-                            Label("Record drive", systemImage: "steeringwheel")
-                                .font(.title3.bold())
-                                .foregroundStyle(Color.black)
-                                .frame(maxWidth: abs(viewWidth - 40), minHeight: 55, maxHeight: 55)
-                                .background {
-                                    RoundedRectangle(cornerRadius: 13)
-                                        .fill(Color.accentColor)
-                                }
-                        }
-                        .fullScreenCover(isPresented: $showRecordDrive) {
-                            RecordDriveView(showRecordDriveView: $showRecordDrive)
-                                .onDisappear {
-                                    prepareSnapShotAndMonthsList()
-                                }
-                        }
-                        .padding(.horizontal)
-                        .padding(.top)
-                    }
-                    .frame(maxWidth: .infinity, minHeight: 125, maxHeight: 125, alignment: .top)
-                    .background {
-                        RoundedRectangle(cornerRadius: 20)
-                            .fill(Color(uiColor: .systemGray5))
-                    }
                 }
-                .ignoresSafeArea(edges: [.bottom])
                 .navigationDestination(for: MonthCard.self) { card in
                     MonthDriveHistoryView(card: card)
                 }
@@ -300,36 +301,28 @@ struct HomeStatsView: View {
                 .onAppear {
                     prepareSnapShotAndMonthsList()
                 }
-//                .onDisappear {
-//                    self.mostRecentDrive = nil
-//                }
             }
         }
     }
     
     func prepareSnapShotAndMonthsList() {
-        let oldestDrives = DataService.getOldestDriveItems(modelContext: modelContext)
-        let mostRecentDrives = DataService.getNewestDriveItems(modelContext: modelContext)
-        if let mostRecentDrive = mostRecentDrives.first {
-            self.mostRecentDrive = mostRecentDrive
+        if let drive = DataService.getNewestDriveItems(modelContext: modelContext).first {
+            self.driveManager.mostRecentDrive = drive
         }
         
-        if let firstDrive = oldestDrives.first {
-            let firstDriveStartTime = firstDrive.startTime
+        let oldestDrives = DataService.getOldestDriveItems(modelContext: modelContext)
+        
+        if let drive = oldestDrives.first {
+            let firstDriveStartTime = drive.startTime
             var testDate: Date = firstDriveStartTime.startDateOfMonth
             //if let backedUpDate = Calendar.current.date(byAdding: .month, value: -3, to: testDate) {
                 
             var monthCards: [MonthCard] = []
             
             let dateFormatter = DateFormatter()
-            dateFormatter.dateFormat = "MMM yyyy"
+            dateFormatter.dateFormat = "MMMM yyyy"
         
-            let dateForm2 = DateFormatter()
-            dateForm2.dateFormat = "MM/dd/yyyy"
-            
             while testDate <= Date() {
-                print("test date: \(dateForm2.string(from: testDate))")
-                
                 let dateString = dateFormatter.string(from: testDate)
                 let newMonthCard = MonthCard(name: dateString, date: testDate)
                 monthCards.insert(newMonthCard, at: 0)
@@ -348,7 +341,7 @@ struct HomeStatsView: View {
         } catch {
             print("Failed to save context: \(error)")
         }
-        mostRecentDrive = nil
+        self.driveManager.mostRecentDrive = nil
     }
 }
 
@@ -357,13 +350,10 @@ struct HomeStatsView: View {
 }
 
 struct DrivePreviewView: View {
-    let drive: Drive
+    @Bindable var drive: Drive
     let width: CGFloat
-    //let evCar: Bool
-    
     @Binding var selectedDrive: Drive?
-    
-    @State private var snapshotImage: UIImage?
+    @State private var snapshotImageData: Data?
     
     var mapWidth: CGFloat {
         abs(width - 40)
@@ -373,29 +363,36 @@ struct DrivePreviewView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .top, spacing: 10) {
-                
+            VStack(alignment: .leading, spacing: 15) {
                 // Image drive route
-                ZStack(alignment: .topLeading) {
-                    if let image = snapshotImage {
-                        Image(uiImage: image)
+                ZStack(alignment: .topTrailing) {
+                    if let data = drive.tripPreviewImageData, let inputImage = UIImage(data: data) {
+                        Image(uiImage: inputImage)
                             .resizable()
-                            .scaledToFit()
+                            .scaledToFill()
                     } else {
                         Color.white.opacity(0.001)
-                            .scaledToFit()
-                            .onAppear {
-                                generateSnapshot()
+                            .scaledToFill()
+                    }
+                    
+                    Button {
+                        self.selectedDrive = drive
+                    } label: {
+                        Image(systemName: "ellipsis")
+                            .foregroundStyle(.white)
+                            .frame(width: 30, height: 30)
+                            .background {
+                                Circle()
+                                    .fill(.regularMaterial)
                             }
                     }
+                    .padding([.top, .trailing])
                 }
-                .frame(height: 250)
-                .clipShape(RoundedRectangle(cornerRadius: 15))
-                //.padding(.horizontal)
+                .frame(height: 200)
                 
                 // Drive stats
-                //ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 15) {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(alignment: .bottom, spacing: 20) {
                         VStack(alignment: .leading, spacing: 0) {
                             Text("$")
                                 .font(.title2)
@@ -405,6 +402,7 @@ struct DrivePreviewView: View {
                                 .foregroundStyle(drive.fuelValue > 0 ? Color.red:Color.green)
                             Text("Fuel cost")
                                 .font(.caption)
+                                .foregroundStyle(.gray)
                         }
                         
                         VStack(alignment: .leading, spacing: 0) {
@@ -414,6 +412,7 @@ struct DrivePreviewView: View {
                                 .font(.title3)
                             Text("Distance")
                                 .font(.caption)
+                                .foregroundStyle(.gray)
                         }
                         
                         VStack(alignment: .leading, spacing: 0) {
@@ -435,6 +434,7 @@ struct DrivePreviewView: View {
                             }
                             Text("Duration")
                                 .font(.caption)
+                                .foregroundStyle(.gray)
                         }
                         
                         VStack(alignment: .leading, spacing: 0) {
@@ -442,151 +442,176 @@ struct DrivePreviewView: View {
                                 .font(.title2.bold())
                             + Text("mph")
                                 .font(.title3)
-                            Text("Avg. Speed")
+                            Text("Avg. speed")
                                 .font(.caption)
+                                .foregroundStyle(.gray)
+                        }
+                    
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text(String(format: "%.0f", drive.elevationClimbedInFeet))
+                                .font(.title2.bold())
+                            + Text("ft")
+                                .font(.title3)
+                            Text("Elevation")
+                                .font(.caption)
+                                .foregroundStyle(.gray)
                         }
                     }
-                //}
+                    .padding(.horizontal)
+                    .padding(.bottom)
+                }
             }
-            .padding(.horizontal)
+            .foregroundStyle(.white)
+            .background {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color(uiColor: UIColor.systemGray5))
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 12))
             
             // Drive start time
             HStack {
                 Text(drive.startTimeStr)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(size: 15, weight: .regular))
+                    .foregroundStyle(.gray)
                     //.shadow(color: .black, radius: 5)
                 
                 Spacer()
                 
-                Button {
-                    self.selectedDrive = drive
-                } label: {
-                    Image(systemName: "ellipsis")
-                        .foregroundStyle(.white)
-                        //.frame(width: 25, height: 25)
-                        .background {
-                            Rectangle()
-                                .fill(Color.gray.opacity(0.001))
-                        }
-                }
+                
             }
-            .padding(.horizontal)
         }
-        .foregroundStyle(.white)
-        .padding(.vertical)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background {
-            RoundedRectangle(cornerRadius: 20)
-                .fill(Color(uiColor: UIColor.systemGray5))
-        }
-        .onChange(of: drive) {
-            print("most recent drive changed")
-            generateSnapshot()
-        }
-    }
-    
-    func generateSnapshot() {
-        let coordinates = drive.orderedLocations.map {
-            return CLLocation(latitude: $0.latitude, longitude: $0.longitude).coordinate
-        }
-        
-        let options = MKMapSnapshotter.Options()
-        //create a bounding box around your coordinate array.
-        let polyline = MKPolyline(coordinates: coordinates, count: coordinates.count)
-        
-        var mapRect = polyline.boundingMapRect
-        
-        let xPadding = mapRect.size.width * -0.1
-        let yPadding = mapRect.size.height * -0.1
-        
-        mapRect = mapRect.insetBy(dx: xPadding, dy: yPadding)
-        
-        options.mapRect = mapRect
-        options.scale = UIScreen.main.scale
-        //options.size = CGSize(width: mapWidth, height: mapHeight) // Adjust size as needed
-
-        let snapshotter = MKMapSnapshotter(options: options)
-        
-        
-        snapshotter.start { snapshot, error in
-            
-            guard let snapshot = snapshot else {
-                return
-            }
-            
-            let inputImage = drawLineOnImage(snapshot, options: options, coordinates: coordinates)
-            
-            snapshotImage = inputImage
-            
-//            if let snapshot = snapshot {
-//
-//                // Create an image context to draw the polyline
-//                UIGraphicsBeginImageContextWithOptions(options.size, false, options.scale)
-//                snapshot.image.draw(at: .zero)
-//
-//                // Draw the polyline on the snapshot
-//                let context = UIGraphicsGetCurrentContext()
-//                context?.setStrokeColor(UIColor.accent.cgColor)
-//                context?.setLineWidth(5)
-//
-//                let points = polyline.points()
-//                let path = UIBezierPath()
-//
-//                for i in 0..<polyline.pointCount - 1 {
-//                    let coordinate = points[i].coordinate
-//                    let point = snapshot.point(for: coordinate)
-//
-//                    if i == 0 {
-//                        path.move(to: point)
-//                    } else {
-//                        path.addLine(to: point)
-//                    }
-//                }
-//
-//                context?.addPath(path.cgPath)
-//                context?.strokePath()
-//
-//                let finalImage = UIGraphicsGetImageFromCurrentImageContext()
-//                UIGraphicsEndImageContext()
-//
-//                snapshotImage = finalImage
+//        .task {
+//            if snapshotImageData == nil {
+//                print("calling generateSnapshot for drive")
+//                drive.tripPreviewImageData = await generateSnapshot(drive, activityPreviewImageWidth: mapWidth, activityPreviewImageHeight: 200)
 //            }
-        }
+//            
+////            if drive.elevation == 0 {
+////                guard let firstLocation =  drive.orderedLocations.first else { return }
+////                
+////                var previousAlt: Double = firstLocation.altitude
+////                
+////                for location in drive.orderedLocations {
+////                    let altDiff = location.altitude - previousAlt
+////                    if altDiff > 0 {
+////                        drive.elevation += altDiff
+////                    }
+////                    previousAlt = location.altitude
+////                }
+////            }
+//        }
     }
     
-    func drawLineOnImage(_ snapshot: MKMapSnapshotter.Snapshot, options: MKMapSnapshotter.Options, coordinates: [CLLocationCoordinate2D]) -> UIImage? {
-        let image = snapshot.image
-        let size = options.size
-        let scale = options.traitCollection.displayScale
-        // for Retina
-        UIGraphicsBeginImageContextWithOptions(size, false, scale)
-        // draw image into ui graphics image context
-        image.draw(at: CGPoint.zero)
-        
-        // get the context for CoreGraphics
-        let context = UIGraphicsGetCurrentContext()
-        
-        if let context = context, let firstCoordinate = coordinates.first {
-            // set stroking width and color of the context
-            context.setLineWidth(7.0)
-            context.setStrokeColor(UIColor.accent.cgColor)
-            // move to start to begin drawing line
-            context.move(to: snapshot.point(for: firstCoordinate))
-            
-            for i in 0...coordinates.count - 1 {
-                context.addLine(to: snapshot.point(for: coordinates[i]))
-                context.move(to: snapshot.point(for: coordinates[i]))
-            }
-            
-            context.strokePath()
-        }
-        
-        let result  = UIGraphicsGetImageFromCurrentImageContext()
-        
-        UIGraphicsEndImageContext()
-        
-        return result != nil ? result : nil
-    }
+//    func generateSnapshot(_ drive: Drive, activityPreviewImageWidth: CGFloat, activityPreviewImageHeight: CGFloat) async -> Data? {
+//        let coordinates = drive.orderedLocations.map {
+//            return CLLocation(latitude: $0.latitude, longitude: $0.longitude).coordinate
+//        }
+//        
+//        let options = MKMapSnapshotter.Options()
+//        //create a bounding box around your coordinate array.
+//        let polyline = MKPolyline(coordinates: coordinates, count: coordinates.count)
+//        
+//        var mapRect = polyline.boundingMapRect
+//        
+//        let xPadding = mapRect.size.width * -0.1
+//        let yPadding = mapRect.size.height * -0.1
+//        
+//        mapRect = mapRect.insetBy(dx: xPadding, dy: yPadding)
+//        
+//        options.mapRect = mapRect
+//        options.scale = UIScreen.main.scale
+//        options.size = CGSize(width: activityPreviewImageWidth, height: activityPreviewImageHeight)
+//
+//        let snapshotter = MKMapSnapshotter(options: options)
+//        
+//        do {
+//            let imageSnapshot = try await snapshotter.start()
+//            
+//            if let inputImage = drawLineOnImage(imageSnapshot, options: options, coordinates: coordinates) {
+//                return inputImage.pngData()
+//            } else {
+//                print("Failed to draw line on image, no image returned.")
+//                return nil
+//            }
+//        } catch {
+//            print("Failed to get image snapshot for drive: \(error.localizedDescription)")
+//            return nil
+//        }
+//    }
+//    
+//    func drawLineOnImage(_ snapshot: MKMapSnapshotter.Snapshot, options: MKMapSnapshotter.Options, coordinates: [CLLocationCoordinate2D]) -> UIImage? {
+//        
+//        let image = snapshot.image
+//        let size = options.size
+//        let scale = options.traitCollection.displayScale
+//        // for Retina
+//        UIGraphicsBeginImageContextWithOptions(size, false, scale)
+//        // draw image into ui graphics image context
+//        image.draw(at: CGPoint.zero)
+//        
+//        // get the context for CoreGraphics
+//        //let context = UIGraphicsGetCurrentContext()
+//        
+//        let path = UIBezierPath()
+//        
+//        let points = coordinates.map { snapshot.point(for: $0) }
+//        
+//        let smoothedCoordinates = interpolateCatmullRom(points: points, numberOfPointsPerSegment: 10)
+//        
+//        if let firstPoint = smoothedCoordinates.first {
+//            path.move(to: firstPoint)
+//        }
+//        
+//        for point in smoothedCoordinates {
+//            path.addLine(to: point)
+//        }
+//        
+//        UIColor.accent.setStroke()
+//        
+//        path.lineWidth = 5
+//        path.stroke()
+//        
+//        let result  = UIGraphicsGetImageFromCurrentImageContext()
+//        
+//        UIGraphicsEndImageContext()
+//        
+//        return result != nil ? result : nil
+//    }
+//    
+//    // Function to interpolate points using Catmull-Rom spline
+//    func interpolateCatmullRom(points: [CGPoint], numberOfPointsPerSegment: Int) -> [CGPoint] {
+//        var smoothPoints: [CGPoint] = []
+//        
+//        // Make sure we have at least 4 points to start with
+//        guard points.count > 3 else { return points }
+//        
+//        for i in 1..<points.count - 2 {
+//            let p0 = points[i - 1]
+//            let p1 = points[i]
+//            let p2 = points[i + 1]
+//            let p3 = points[i + 2]
+//            
+//            for t in stride(from: 0.0, to: 1.0, by: 1.0 / CGFloat(numberOfPointsPerSegment)) {
+//                let x = interpolateCatmullRom(p0.x, p1.x, p2.x, p3.x, t: t)
+//                let y = interpolateCatmullRom(p0.y, p1.y, p2.y, p3.y, t: t)
+//                smoothPoints.append(CGPoint(x: x, y: y))
+//            }
+//        }
+//        
+//        return smoothPoints
+//    }
+//
+//    // Catmull-Rom spline interpolation for a single dimension (X or Y)
+//    func interpolateCatmullRom(_ p0: CGFloat, _ p1: CGFloat, _ p2: CGFloat, _ p3: CGFloat, t: CGFloat) -> CGFloat {
+//        let t2 = t * t
+//        let t3 = t2 * t
+//        
+//        let v0 = (p2 - p0) * 0.5
+//        let v1 = (p3 - p1) * 0.5
+//        
+//        return (2 * p1 - 2 * p2 + v0 + v1) * t3 + (-3 * p1 + 3 * p2 - 2 * v0 - v1) * t2 + v0 * t + p1
+//    }
 }
 
 struct EditGasPriceView: View {

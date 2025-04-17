@@ -26,7 +26,8 @@ struct ReviewDriveView: View {
                             .font(.title.bold())
                             .foregroundStyle(drive.fuelValue > 0 ? Color.red:Color.green)
                         Text("Fuel cost")
-                            .font(.caption)
+                            //.font(.caption)
+                            .foregroundStyle(.gray)
                     }
                     
                     VStack(alignment: .leading, spacing: 0) {
@@ -35,7 +36,8 @@ struct ReviewDriveView: View {
                         + Text("mi")
                             .font(.title3)
                         Text("Distance")
-                            .font(.caption)
+                            //.font(.caption)
+                            .foregroundStyle(.gray)
                     }
                     
                     VStack(alignment: .leading, spacing: 0) {
@@ -58,7 +60,8 @@ struct ReviewDriveView: View {
                         }
                         
                         Text("Duration")
-                            .font(.caption)
+                            //.font(.caption)
+                            .foregroundStyle(.gray)
                     }
                     
                     VStack(alignment: .leading, spacing: 0) {
@@ -66,15 +69,27 @@ struct ReviewDriveView: View {
                             .font(.title.bold())
                         + Text("mph")
                             .font(.title3)
-                        Text("Avg. Speed")
-                            .font(.caption)
+                        Text("Avg. speed")
+                            //.font(.caption)
+                            .foregroundStyle(.gray)
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(String(format: "%.0f", drive.elevationClimbedInFeet))
+                            .font(.title.bold())
+                        + Text("ft")
+                            .font(.title3)
+                        Text("Elevation")
+                            //.font(.caption)
+                            .foregroundStyle(.gray)
                     }
                 }
                 .padding(.horizontal)
                 .padding(.bottom)
             }
         }
-        .navigationTitle("Drive: \(drive.startTimeStr)")
+        .navigationTitle("\(drive.startTimeStr)")
+        
     }
 }
 

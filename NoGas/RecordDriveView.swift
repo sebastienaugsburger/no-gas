@@ -9,7 +9,8 @@ import SwiftUI
 import MapKit
 
 struct RecordDriveView: View {
-    @StateObject private var driveManager = DriveManager()
+    
+    @EnvironmentObject var driveManager: DriveManager
     @Environment(\.modelContext) private var modelContext
     
     @AppStorage("evCar") var evCar: Bool = true
@@ -42,32 +43,49 @@ struct RecordDriveView: View {
     
     var body: some View {
         GeometryReader { geo in
+            let viewWidth = geo.size.width
             NavigationStack {
                 VStack(spacing: 20) {
                     VStack (alignment: .leading, spacing: 20) {
-                        ZStack(alignment: .topLeading) {
+                        ZStack(alignment: .top) {
                             Color(uiColor: .systemGray6)
                             //Map(position: .constant(.region(region)), interactionModes: .all)
                             DriveMapView(region: $region)
                             
-                            if driveManager.isRecording == false {
-                                Button {
-                                    showRecordDriveView = false
-                                } label: {
-                                    Image(systemName: "xmark")
-                                        .resizable()
-                                        .scaledToFit()
-                                        .frame(width: 18, height: 18)
-                                        .foregroundStyle(.white)
-                                        .frame(width: 50, height: 50)
-                                        .background {
-                                            Circle()
-                                                .fill(Color(uiColor: .systemGray5))
-                                        }
+                            HStack(alignment: .top) {
+                                if driveManager.isRecording == false {
+                                    Button {
+                                        showRecordDriveView = false
+                                    } label: {
+                                        Image(systemName: "xmark")
+                                            .resizable()
+                                            .scaledToFit()
+                                            .frame(width: 18, height: 18)
+                                            .foregroundStyle(.white)
+                                            .frame(width: 50, height: 50)
+                                            .background {
+                                                Circle()
+                                                    .fill(.regularMaterial)
+                                            }
+                                    }
                                 }
-                                .padding(.horizontal)
-                                .padding(.top, geo.safeAreaInsets.top + 20)
+                                
+                                Spacer()
+                                VStack(spacing: 0) {
+                                    Text(String(format: "%.0f", driveManager.speedMetersPerHour))
+                                        .font(.system(size: 35, weight: .bold))
+                                    Text("MPH")
+                                        .font(.system(size: 15, weight: .semibold))
+                                }
+                                .foregroundStyle(.white)
+                                .frame(width: 80, height: 80)
+                                .background {
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .fill(.regularMaterial)
+                                }
                             }
+                            .padding(.top, geo.safeAreaInsets.top + 20)
+                            .padding(.horizontal)
                         }
                         .cornerRadius(20)
                         .environmentObject(driveManager)
@@ -83,7 +101,8 @@ struct RecordDriveView: View {
                                 + Text("mi")
                                     .font(.title3)
                                 Text("Distance")
-                                    .font(.caption)
+                                    .foregroundStyle(.gray)
+                                    //.font(.caption)
                             }
                             
                             VStack(alignment: .leading, spacing: 0) {
@@ -99,12 +118,18 @@ struct RecordDriveView: View {
                                         stopTimer()
                                     }
                                 Text("Duration")
-                                    .font(.caption)
+                                    .foregroundStyle(.gray)
+                                    //.font(.caption)
                             }
                             
                             Spacer()
                         }
                         .padding(.horizontal)
+                        .padding(.bottom, 20)
+                    }
+                    .background {
+                        RoundedRectangle(cornerRadius: 20)
+                            .fill(Color(uiColor: .systemGray5))
                     }
                     
                     if showButtons {
@@ -122,7 +147,7 @@ struct RecordDriveView: View {
                                         //milesTraveled += drive.distance / 1609.34
                                         //driveCount += 1
                                     }
-                                    self.driveManager.stopRecording(context: modelContext)
+                                    self.driveManager.stopRecording(context: modelContext, activityPreviewImageWidth: viewWidth - 40, activityPreviewImageHeight: 200)
                                     self.showRecordDriveView = false
                                 } else {
                                     self.driveManager.startRecording()
@@ -141,12 +166,12 @@ struct RecordDriveView: View {
                                 
                                 
                             } label: {
-                                Label(driveManager.isRecording ? "End drive" : "Start drive", systemImage: "steeringwheel")
-                                    .font(.title3.bold())
+                                Text(driveManager.isRecording ? "End" : "Start")
+                                    .font(.system(size: 21, weight: .semibold))
                                     .foregroundColor(driveManager.isRecording ? Color.white:Color.black)
-                                    .frame(maxWidth: .infinity, minHeight: 55, maxHeight: 55)
+                                    .frame(maxWidth: .infinity, minHeight: 60, maxHeight: 60)
                                     .background{
-                                        RoundedRectangle(cornerRadius: 15)
+                                        RoundedRectangle(cornerRadius: 12)
                                             .fill(driveManager.isRecording ? Color.red : Color.accentColor)
                                     }
                             }
@@ -206,45 +231,46 @@ struct DriveMapView: View {
     @State var updateLocation: Bool = true
 
     var body: some View {
-        ZStack(alignment: .bottomTrailing) {
+        ZStack(alignment: .bottomLeading) {
             RecordDriveMapViewRepresentable(driveManager: driveManager, region: $region, updateLocation: $updateLocation)
-                    .simultaneousGesture(
-                        MagnifyGesture()
-                            .onChanged { value in
-                                updateLocation = false
-                            }
-                    )
-                    .simultaneousGesture(
-                        DragGesture()
-                            .onChanged { value in
-                                updateLocation = false
-                            }
-                    )
-                    .onChange(of: driveManager.currentDrive?.locations.last) { newLocation, oldLocation in
-                        if let location = newLocation {
-                            region.center = CLLocationCoordinate2D(latitude: location.latitude, longitude: location.longitude)
-                        }
+            .simultaneousGesture(
+                MagnifyGesture()
+                    .onChanged { value in
+                        updateLocation = false
                     }
-                    
+            )
+            .simultaneousGesture(
+                DragGesture()
+                    .onChanged { value in
+                        updateLocation = false
+                    }
+            )
+            .onChange(of: driveManager.currentDrive?.locations.last) { newLocation, oldLocation in
+                if let location = newLocation {
+                    region.center = CLLocationCoordinate2D(latitude: location.latitude, longitude: location.longitude)
+                }
+            }
             
-                if updateLocation == false {
-                    Button {
-                        updateLocation = true
-                    } label: {
+            if updateLocation == false {
+                Button {
+                    updateLocation = true
+                } label: {
+                    ZStack {
+                        Circle()
+                            .fill(.white)
+                            .frame(width: 50, height: 50)
+                            .shadow(radius: 5, y: 5)
+                        
                         Image(systemName: "location.fill")
                             .resizable()
                             .scaledToFit()
                             .frame(width: 23, height: 23)
                             .foregroundStyle(.black)
-                            .frame(width: 50, height: 50)
-                            .background {
-                                Circle()
-                                    .fill(Color.white)
-                            }
                     }
-                    .padding()
                 }
-            
+                .padding(.leading)
+                .padding(.bottom, 40)
+            }
         }
     }
 }

@@ -11,6 +11,8 @@ import SwiftData
 @main
 struct NoGasApp: App {
     
+    @StateObject private var driveManager = DriveManager()
+    
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([Drive.self])
         let container = try! ModelContainer(for: schema)
@@ -21,6 +23,7 @@ struct NoGasApp: App {
         WindowGroup {
             ContentView()
                 .modelContainer(sharedModelContainer)
+                .environmentObject(driveManager)
                 .preferredColorScheme(.dark)
         }
     }
