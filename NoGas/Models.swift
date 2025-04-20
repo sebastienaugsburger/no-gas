@@ -48,7 +48,7 @@ class Drive: Identifiable {
     @Relationship(deleteRule: .cascade) var locations: [DriveLocation] = []
     
     var elevationClimbedInFeet: Double {
-        Double(elevation) * 3.28084
+        elevation * 3.28084
     }
     
     var startTimeStr: String {

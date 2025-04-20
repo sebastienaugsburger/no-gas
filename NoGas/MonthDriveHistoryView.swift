@@ -17,7 +17,11 @@ struct MonthDriveHistoryView: View {
     @State var selectedDrive: Drive?
     @State private var drives: [Drive] = []
     @State private var secondsTotal = 0
-    @State private var totalTimeString = ""
+    
+    var totalTimeString: String {
+        let seconds = getTotalSeconds(from: drives)
+        return getTimeString(for: seconds)
+    }
     
     var distance: Double {
         drives.map { $0.miles }.reduce(0, +)
@@ -48,10 +52,10 @@ struct MonthDriveHistoryView: View {
                             VStack(alignment: .leading, spacing: 0) {
                                 Text("$")
                                     .font(.title)
-                                    .foregroundStyle(totalFuelCost > 0 ? Color.red:Color.green)
-                                + Text(String(format: "%.2f", abs(totalFuelCost)))
+                                    .foregroundStyle(totalFuelCost < 0 ? Color.red:Color.blue)
+                                + Text(String(format: "%.2f", totalFuelCost))
                                     .font(.title.bold())
-                                    .foregroundStyle(totalFuelCost > 0 ? Color.red:Color.green)
+                                    .foregroundStyle(totalFuelCost < 0 ? Color.red:Color.blue)
                                 Text("Fuel cost")
                                     .foregroundStyle(.gray)
                             }
@@ -63,7 +67,8 @@ struct MonthDriveHistoryView: View {
                             }
                             
                             VStack(alignment: .leading, spacing: 0) {
-                                Text("\(distance, specifier: "%.2f")")
+                                
+                                Text("\(distance, specifier: distance >= 10 ? "%.0f":"%.1f")")
                                     .font(.title.bold())
                                 + Text("mi")
                                     .font(.title3)
@@ -148,16 +153,7 @@ struct MonthDriveHistoryView: View {
                     drives = DataService.fetchDrivesInMonth(in: context, for: card.date)
                     print("Elevations: \(drives.map { $0.elevation })")
                     
-                    secondsTotal = getTotalSeconds(from: drives)
-                    let numberOfHours = secondsTotal / 3600
-                    var numberOfMinutes = secondsTotal / 60
-                    if numberOfHours > 0 {
-                        let secondsRemainder = secondsTotal - (numberOfHours * 3600)
-                        numberOfMinutes = secondsRemainder / 60
-                        totalTimeString = "\(numberOfHours)h \(numberOfMinutes)m"
-                    } else {
-                        totalTimeString = "\(numberOfMinutes)s"
-                    }
+                    
                 }
             }
             .navigationTitle(card.name)
@@ -175,6 +171,18 @@ struct MonthDriveHistoryView: View {
         drives = drives.filter { $0.id != drive.id }
     }
     
+    func getTimeString(for secondsTotal: Int) -> String {
+        let numberOfHours = secondsTotal / 3600
+        var numberOfMinutes = secondsTotal / 60
+        if numberOfHours > 0 {
+            let secondsRemainder = secondsTotal - (numberOfHours * 3600)
+            numberOfMinutes = secondsRemainder / 60
+            return "\(numberOfHours)h \(numberOfMinutes)m"
+        } else {
+            return "\(numberOfMinutes)m"
+        }
+    }
+    
     func getTotalSeconds(from drives: [Drive]) -> Int {
         var secondsTotal = 0
         
@@ -187,11 +195,6 @@ struct MonthDriveHistoryView: View {
         }
         
         return secondsTotal
-    }
-    
-    func getTotalElevation(from drives: [Drive]) -> Double {
-        var totalElevation = 0.0
-        return totalElevation
     }
 }
 

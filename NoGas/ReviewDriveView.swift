@@ -21,17 +21,17 @@ struct ReviewDriveView: View {
                     VStack(alignment: .leading, spacing: 0) {
                         Text("$")
                             .font(.title)
-                            .foregroundStyle(drive.fuelValue > 0 ? Color.red:Color.green)
-                        + Text(String(format: "%.2f", drive.absFuelValue))
+                            .foregroundStyle(drive.fuelValue < 0 ? Color.red:Color.blue)
+                        + Text(String(format: "%.2f", drive.fuelValue))
                             .font(.title.bold())
-                            .foregroundStyle(drive.fuelValue > 0 ? Color.red:Color.green)
+                            .foregroundStyle(drive.fuelValue < 0 ? Color.red:Color.blue)
                         Text("Fuel cost")
                             //.font(.caption)
                             .foregroundStyle(.gray)
                     }
                     
                     VStack(alignment: .leading, spacing: 0) {
-                        Text("\(drive.miles, specifier: "%.2f")")
+                        Text("\(drive.miles, specifier: drive.miles >= 10 ? "%.0f":"%.1f")")
                             .font(.title.bold())
                         + Text("mi")
                             .font(.title3)
@@ -53,10 +53,10 @@ struct ReviewDriveView: View {
                             + Text("m")
                                 .font(.title3)
                             
-                            Text("\(drive.secCount)")
-                                .font(.title.bold())
-                            + Text("s")
-                                .font(.title3)
+//                            Text("\(drive.secCount)")
+//                                .font(.title.bold())
+//                            + Text("s")
+//                                .font(.title3)
                         }
                         
                         Text("Duration")
@@ -65,7 +65,7 @@ struct ReviewDriveView: View {
                     }
                     
                     VStack(alignment: .leading, spacing: 0) {
-                        Text("\(drive.milesPerHour, specifier: "%.2f")")
+                        Text("\(drive.milesPerHour, specifier: "%.0f")")
                             .font(.title.bold())
                         + Text("mph")
                             .font(.title3)

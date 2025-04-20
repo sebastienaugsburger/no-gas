@@ -24,7 +24,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		8151F1332D93AAA500C083DB /* TraceMyTrip.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TraceMyTrip.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		8151F1332D93AAA500C083DB /* RoadSnail.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RoadSnail.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8151F1432D93AAA600C083DB /* NoGasTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NoGasTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		8151F14D2D93AAA600C083DB /* NoGasUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NoGasUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -98,7 +98,7 @@
 		8151F1342D93AAA500C083DB /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				8151F1332D93AAA500C083DB /* TraceMyTrip.app */,
+				8151F1332D93AAA500C083DB /* RoadSnail.app */,
 				8151F1432D93AAA600C083DB /* NoGasTests.xctest */,
 				8151F14D2D93AAA600C083DB /* NoGasUITests.xctest */,
 			);
@@ -127,7 +127,7 @@
 			packageProductDependencies = (
 			);
 			productName = NoGas;
-			productReference = 8151F1332D93AAA500C083DB /* TraceMyTrip.app */;
+			productReference = 8151F1332D93AAA500C083DB /* RoadSnail.app */;
 			productType = "com.apple.product-type.application";
 		};
 		8151F1422D93AAA600C083DB /* NoGasTests */ = {
@@ -413,8 +413,8 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = NoGas/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = TraceMyTrip;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.travel";
+				INFOPLIST_KEY_CFBundleDisplayName = RoadSnail;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "We need your location to record drives even in the background.";
 				INFOPLIST_KEY_NSLocationAlwaysUsageDescription = "We need your location to continue tracking your drives even in the background.";
 				INFOPLIST_KEY_NSLocationUsageDescription = "We need your location to record your drives.";
@@ -423,15 +423,15 @@
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.sebastienaugsburger.tracemytrip;
-				PRODUCT_NAME = TraceMyTrip;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sebastienaugsburger.roadsnail;
+				PRODUCT_NAME = RoadSnail;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
@@ -454,8 +454,8 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = NoGas/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = TraceMyTrip;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.travel";
+				INFOPLIST_KEY_CFBundleDisplayName = RoadSnail;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "We need your location to record drives even in the background.";
 				INFOPLIST_KEY_NSLocationAlwaysUsageDescription = "We need your location to continue tracking your drives even in the background.";
 				INFOPLIST_KEY_NSLocationUsageDescription = "We need your location to record your drives.";
@@ -464,15 +464,15 @@
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.sebastienaugsburger.tracemytrip;
-				PRODUCT_NAME = TraceMyTrip;
+				PRODUCT_BUNDLE_IDENTIFIER = com.sebastienaugsburger.roadsnail;
+				PRODUCT_NAME = RoadSnail;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;

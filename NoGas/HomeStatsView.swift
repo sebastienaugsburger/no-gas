@@ -79,7 +79,7 @@ struct DataService {
 
 struct HomeStatsView: View {
     
-    @StateObject private var driveManager = DriveManager()
+    @EnvironmentObject private var driveManager: DriveManager
     @Environment(\.modelContext) private var modelContext
     
     @AppStorage("evCar") var evCar: Bool = true
@@ -90,10 +90,6 @@ struct HomeStatsView: View {
     @State private var showRecordDrive: Bool = false
     @State var monthCards: [MonthCard] = []
     @State private var showMostRecentTripReviewView = false
-    
-//    var absFuelCostBalance: Double {
-//        abs(fuelCostBalance)
-//    }
     
     var body: some View {
         GeometryReader { geo in
@@ -369,10 +365,11 @@ struct DrivePreviewView: View {
                     if let data = drive.tripPreviewImageData, let inputImage = UIImage(data: data) {
                         Image(uiImage: inputImage)
                             .resizable()
-                            .scaledToFill()
+                            .scaledToFit()
                     } else {
                         Color.white.opacity(0.001)
                             .scaledToFill()
+                            .frame(height: 200)
                     }
                     
                     Button {
@@ -388,7 +385,7 @@ struct DrivePreviewView: View {
                     }
                     .padding([.top, .trailing])
                 }
-                .frame(height: 200)
+                
                 
                 // Drive stats
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -396,17 +393,17 @@ struct DrivePreviewView: View {
                         VStack(alignment: .leading, spacing: 0) {
                             Text("$")
                                 .font(.title2)
-                                .foregroundStyle(drive.fuelValue > 0 ? Color.red:Color.green)
-                            + Text(String(format: "%.2f", drive.absFuelValue))
+                                .foregroundStyle(drive.fuelValue < 0 ? Color.red:Color.blue)
+                            + Text(String(format: "%.2f", drive.fuelValue))
                                 .font(.title2.bold())
-                                .foregroundStyle(drive.fuelValue > 0 ? Color.red:Color.green)
+                                .foregroundStyle(drive.fuelValue < 0 ? Color.red:Color.blue)
                             Text("Fuel cost")
                                 .font(.caption)
                                 .foregroundStyle(.gray)
                         }
                         
                         VStack(alignment: .leading, spacing: 0) {
-                            Text("\(drive.miles, specifier: "%.2f")")
+                            Text("\(drive.miles, specifier: "%.1f")")
                                 .font(.title2.bold())
                             + Text("mi")
                                 .font(.title3)
@@ -427,10 +424,10 @@ struct DrivePreviewView: View {
                                     .font(.title2.bold())
                                 + Text("m")
                                     .font(.title3)
-                                Text("\(drive.secCount)")
-                                    .font(.title2.bold())
-                                + Text("s")
-                                    .font(.title3)
+//                                Text("\(drive.secCount)")
+//                                    .font(.title2.bold())
+//                                + Text("s")
+//                                    .font(.title3)
                             }
                             Text("Duration")
                                 .font(.caption)
@@ -438,7 +435,7 @@ struct DrivePreviewView: View {
                         }
                         
                         VStack(alignment: .leading, spacing: 0) {
-                            Text("\(drive.milesPerHour, specifier: "%.2f")")
+                            Text("\(drive.milesPerHour, specifier: "%.0f")")
                                 .font(.title2.bold())
                             + Text("mph")
                                 .font(.title3)
@@ -481,137 +478,19 @@ struct DrivePreviewView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-//        .task {
-//            if snapshotImageData == nil {
-//                print("calling generateSnapshot for drive")
-//                drive.tripPreviewImageData = await generateSnapshot(drive, activityPreviewImageWidth: mapWidth, activityPreviewImageHeight: 200)
+//        .onAppear {
+//            if drive.tripPreviewImageData == nil {
+//                let size = CGSize(width: mapWidth, height: mapHeight)
+//                let coordinates = drive.orderedLocations.map {
+//                    return CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude)
+//                }
+//                let generator = MapSnapshotGenerator()
+//                generator.generateSnapshot(from: coordinates, size: size) { data in
+//                    drive.tripPreviewImageData = data
+//                }
 //            }
-//            
-////            if drive.elevation == 0 {
-////                guard let firstLocation =  drive.orderedLocations.first else { return }
-////                
-////                var previousAlt: Double = firstLocation.altitude
-////                
-////                for location in drive.orderedLocations {
-////                    let altDiff = location.altitude - previousAlt
-////                    if altDiff > 0 {
-////                        drive.elevation += altDiff
-////                    }
-////                    previousAlt = location.altitude
-////                }
-////            }
 //        }
     }
-    
-//    func generateSnapshot(_ drive: Drive, activityPreviewImageWidth: CGFloat, activityPreviewImageHeight: CGFloat) async -> Data? {
-//        let coordinates = drive.orderedLocations.map {
-//            return CLLocation(latitude: $0.latitude, longitude: $0.longitude).coordinate
-//        }
-//        
-//        let options = MKMapSnapshotter.Options()
-//        //create a bounding box around your coordinate array.
-//        let polyline = MKPolyline(coordinates: coordinates, count: coordinates.count)
-//        
-//        var mapRect = polyline.boundingMapRect
-//        
-//        let xPadding = mapRect.size.width * -0.1
-//        let yPadding = mapRect.size.height * -0.1
-//        
-//        mapRect = mapRect.insetBy(dx: xPadding, dy: yPadding)
-//        
-//        options.mapRect = mapRect
-//        options.scale = UIScreen.main.scale
-//        options.size = CGSize(width: activityPreviewImageWidth, height: activityPreviewImageHeight)
-//
-//        let snapshotter = MKMapSnapshotter(options: options)
-//        
-//        do {
-//            let imageSnapshot = try await snapshotter.start()
-//            
-//            if let inputImage = drawLineOnImage(imageSnapshot, options: options, coordinates: coordinates) {
-//                return inputImage.pngData()
-//            } else {
-//                print("Failed to draw line on image, no image returned.")
-//                return nil
-//            }
-//        } catch {
-//            print("Failed to get image snapshot for drive: \(error.localizedDescription)")
-//            return nil
-//        }
-//    }
-//    
-//    func drawLineOnImage(_ snapshot: MKMapSnapshotter.Snapshot, options: MKMapSnapshotter.Options, coordinates: [CLLocationCoordinate2D]) -> UIImage? {
-//        
-//        let image = snapshot.image
-//        let size = options.size
-//        let scale = options.traitCollection.displayScale
-//        // for Retina
-//        UIGraphicsBeginImageContextWithOptions(size, false, scale)
-//        // draw image into ui graphics image context
-//        image.draw(at: CGPoint.zero)
-//        
-//        // get the context for CoreGraphics
-//        //let context = UIGraphicsGetCurrentContext()
-//        
-//        let path = UIBezierPath()
-//        
-//        let points = coordinates.map { snapshot.point(for: $0) }
-//        
-//        let smoothedCoordinates = interpolateCatmullRom(points: points, numberOfPointsPerSegment: 10)
-//        
-//        if let firstPoint = smoothedCoordinates.first {
-//            path.move(to: firstPoint)
-//        }
-//        
-//        for point in smoothedCoordinates {
-//            path.addLine(to: point)
-//        }
-//        
-//        UIColor.accent.setStroke()
-//        
-//        path.lineWidth = 5
-//        path.stroke()
-//        
-//        let result  = UIGraphicsGetImageFromCurrentImageContext()
-//        
-//        UIGraphicsEndImageContext()
-//        
-//        return result != nil ? result : nil
-//    }
-//    
-//    // Function to interpolate points using Catmull-Rom spline
-//    func interpolateCatmullRom(points: [CGPoint], numberOfPointsPerSegment: Int) -> [CGPoint] {
-//        var smoothPoints: [CGPoint] = []
-//        
-//        // Make sure we have at least 4 points to start with
-//        guard points.count > 3 else { return points }
-//        
-//        for i in 1..<points.count - 2 {
-//            let p0 = points[i - 1]
-//            let p1 = points[i]
-//            let p2 = points[i + 1]
-//            let p3 = points[i + 2]
-//            
-//            for t in stride(from: 0.0, to: 1.0, by: 1.0 / CGFloat(numberOfPointsPerSegment)) {
-//                let x = interpolateCatmullRom(p0.x, p1.x, p2.x, p3.x, t: t)
-//                let y = interpolateCatmullRom(p0.y, p1.y, p2.y, p3.y, t: t)
-//                smoothPoints.append(CGPoint(x: x, y: y))
-//            }
-//        }
-//        
-//        return smoothPoints
-//    }
-//
-//    // Catmull-Rom spline interpolation for a single dimension (X or Y)
-//    func interpolateCatmullRom(_ p0: CGFloat, _ p1: CGFloat, _ p2: CGFloat, _ p3: CGFloat, t: CGFloat) -> CGFloat {
-//        let t2 = t * t
-//        let t3 = t2 * t
-//        
-//        let v0 = (p2 - p0) * 0.5
-//        let v1 = (p3 - p1) * 0.5
-//        
-//        return (2 * p1 - 2 * p2 + v0 + v1) * t3 + (-3 * p1 + 3 * p2 - 2 * v0 - v1) * t2 + v0 * t + p1
-//    }
 }
 
 struct EditGasPriceView: View {

@@ -35,10 +35,12 @@ struct RecordDriveView: View {
     
     @State private var showButtons: Bool = true
     
+    @State private var debounceWorkItem: DispatchWorkItem?
+    
     var distanceString: String {
         let distanceInMeters = driveManager.currentDrive?.distance ?? 0
         let distanceInMiles = distanceInMeters / 1609.34
-        return String(format: "%.2f", distanceInMiles)
+        return String(format: distanceInMiles >= 10 ? "%.0f":"%.1f", distanceInMiles)
     }
     
     var body: some View {
@@ -49,8 +51,11 @@ struct RecordDriveView: View {
                     VStack (alignment: .leading, spacing: 20) {
                         ZStack(alignment: .top) {
                             Color(uiColor: .systemGray6)
-                            //Map(position: .constant(.region(region)), interactionModes: .all)
                             DriveMapView(region: $region)
+                                .onChange(of: driveManager.userLocations.count) {
+                                    guard let lastCoord = driveManager.userLocations.last else { return }
+                                    region.center = lastCoord
+                                }
                             
                             HStack(alignment: .top) {
                                 if driveManager.isRecording == false {
@@ -61,27 +66,32 @@ struct RecordDriveView: View {
                                             .resizable()
                                             .scaledToFit()
                                             .frame(width: 18, height: 18)
-                                            .foregroundStyle(.white)
+                                            .foregroundStyle(.black)
                                             .frame(width: 50, height: 50)
                                             .background {
                                                 Circle()
-                                                    .fill(.regularMaterial)
+                                                    .fill(.white)
                                             }
                                     }
                                 }
                                 
                                 Spacer()
                                 VStack(spacing: 0) {
-                                    Text(String(format: "%.0f", driveManager.speedMetersPerHour))
-                                        .font(.system(size: 35, weight: .bold))
+                                    if driveManager.speedMetersPerHour >= 0 {
+                                        Text(String(format: "%.0f", driveManager.speedMetersPerHour))
+                                            .font(.system(size: 38, weight: .bold))
+                                    } else {
+                                        Text("0")
+                                            .font(.system(size: 38, weight: .bold))
+                                    }
                                     Text("MPH")
                                         .font(.system(size: 15, weight: .semibold))
                                 }
-                                .foregroundStyle(.white)
-                                .frame(width: 80, height: 80)
+                                .foregroundStyle(.black)
+                                .frame(width: 75, height: 75)
                                 .background {
                                     RoundedRectangle(cornerRadius: 10)
-                                        .fill(.regularMaterial)
+                                        .fill(.white)
                                 }
                             }
                             .padding(.top, geo.safeAreaInsets.top + 20)
@@ -89,10 +99,6 @@ struct RecordDriveView: View {
                         }
                         .cornerRadius(20)
                         .environmentObject(driveManager)
-                        .onChange(of: driveManager.hasCurrentLocation) { newLocation, oldLocation in
-                            guard let cuLocation = driveManager.currentLocation else { return }
-                            region.center = cuLocation
-                        }
                         
                         HStack(spacing: 20) {
                             VStack(alignment: .leading, spacing: 0) {
@@ -143,9 +149,6 @@ struct RecordDriveView: View {
                                         if evCar {
                                             drive.fuelValue = drive.fuelValue * -1
                                         }
-                                        //fuelCostBalance += drive.fuelValue
-                                        //milesTraveled += drive.distance / 1609.34
-                                        //driveCount += 1
                                     }
                                     self.driveManager.stopRecording(context: modelContext, activityPreviewImageWidth: viewWidth - 40, activityPreviewImageHeight: 200)
                                     self.showRecordDriveView = false
@@ -175,7 +178,6 @@ struct RecordDriveView: View {
                                             .fill(driveManager.isRecording ? Color.red : Color.accentColor)
                                     }
                             }
-                            .disabled(driveManager.currentLocation == nil)
                         }
                         .padding([.bottom, .horizontal])
                     } else {
@@ -185,6 +187,10 @@ struct RecordDriveView: View {
                     }
                 }
                 .ignoresSafeArea(edges: [.top])
+                .onAppear {
+                    guard let lastCoord = driveManager.userLocations.last else { return }
+                    region.center = lastCoord
+                }
             }
         }
     }
@@ -245,11 +251,6 @@ struct DriveMapView: View {
                         updateLocation = false
                     }
             )
-            .onChange(of: driveManager.currentDrive?.locations.last) { newLocation, oldLocation in
-                if let location = newLocation {
-                    region.center = CLLocationCoordinate2D(latitude: location.latitude, longitude: location.longitude)
-                }
-            }
             
             if updateLocation == false {
                 Button {
@@ -312,7 +313,7 @@ struct ReviewDriveMapViewRepresentable: UIViewRepresentable {
             if let polyline = overlay as? MKPolyline {
                 let renderer = MKPolylineRenderer(polyline: polyline)
                 renderer.strokeColor = UIColor.accent
-                renderer.lineWidth = 7.0
+                renderer.lineWidth = 5.0
                 return renderer
             }
             return MKOverlayRenderer()
@@ -348,6 +349,7 @@ struct RecordDriveMapViewRepresentable: UIViewRepresentable {
     func makeUIView(context: Context) -> MKMapView {
         mapView.delegate = context.coordinator
         mapView.showsUserLocation = true
+        mapView.setRegion(region, animated: true)
         //mapView.userTrackingMode = .follow // Automatically follows user
         return mapView
     }
@@ -374,7 +376,7 @@ struct RecordDriveMapViewRepresentable: UIViewRepresentable {
             if let polyline = overlay as? MKPolyline {
                 let renderer = MKPolylineRenderer(polyline: polyline)
                 renderer.strokeColor = UIColor.accent
-                renderer.lineWidth = 7.0
+                renderer.lineWidth = 5.0
                 return renderer
             }
             return MKOverlayRenderer()
