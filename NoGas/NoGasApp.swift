@@ -24,7 +24,7 @@ struct NoGasApp: App {
             ContentView()
                 .modelContainer(sharedModelContainer)
                 .environmentObject(driveManager)
-                .preferredColorScheme(.dark)
+                //.preferredColorScheme(.dark)
         }
     }
 }

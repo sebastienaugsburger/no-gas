@@ -12,19 +12,21 @@ struct MonthDriveHistoryView: View {
     
     @Environment(\.modelContext) private var context
     
+    let metricSystem: Bool
+    
     let card: MonthCard
     
     @State var selectedDrive: Drive?
     @State private var drives: [Drive] = []
-    @State private var secondsTotal = 0
+    @State private var minTotal = 0
+    @State private var hrTotal = 0
     
-    var totalTimeString: String {
-        let seconds = getTotalSeconds(from: drives)
-        return getTimeString(for: seconds)
+    var distanceMiles: Double {
+        drives.map { $0.miles }.reduce(0, +)
     }
     
-    var distance: Double {
-        drives.map { $0.miles }.reduce(0, +)
+    var distanceKilometers: Double {
+        drives.map { $0.kilometers }.reduce(0, +)
     }
     
     var totalFuelCost: Double {
@@ -33,6 +35,10 @@ struct MonthDriveHistoryView: View {
     
     var totalElevationInFeet: Double {
         drives.map { $0.elevationClimbedInFeet }.reduce(0, +)
+    }
+    
+    var totalElevation: Double {
+        drives.map { $0.elevation }.reduce(0, +)
     }
     
     var body: some View {
@@ -67,11 +73,17 @@ struct MonthDriveHistoryView: View {
                             }
                             
                             VStack(alignment: .leading, spacing: 0) {
-                                
-                                Text("\(distance, specifier: distance >= 10 ? "%.0f":"%.1f")")
-                                    .font(.title.bold())
-                                + Text("mi")
-                                    .font(.title3)
+                                if metricSystem {
+                                    Text("\(distanceKilometers, specifier: distanceKilometers >= 10 ? "%.0f":"%.1f")")
+                                        .font(.title.bold())
+                                    + Text("km")
+                                        .font(.title3)
+                                } else {
+                                    Text("\(distanceMiles, specifier: distanceMiles >= 10 ? "%.0f":"%.1f")")
+                                        .font(.title.bold())
+                                    + Text("mi")
+                                        .font(.title3)
+                                }
                                 Text("Distance")
                                     .foregroundStyle(.gray)
                             }
@@ -86,8 +98,16 @@ struct MonthDriveHistoryView: View {
                         
                         HStack(spacing: 10) {
                             VStack(alignment: .leading, spacing: 0) {
-                                Text(totalTimeString)
+                                if hrTotal > 0 {
+                                    Text("\(hrTotal)")
+                                        .font(.title.bold())
+                                    + Text("min")
+                                        .font(.title3)
+                                }
+                                Text("\(minTotal)")
                                     .font(.title.bold())
+                                + Text("min")
+                                    .font(.title3)
                                 Text("Time")
                                     .foregroundStyle(.gray)
                             }
@@ -99,10 +119,17 @@ struct MonthDriveHistoryView: View {
                             }
                             
                             VStack(alignment: .leading, spacing: 0) {
-                                Text(String(format: "%.0f", totalElevationInFeet))
-                                    .font(.title.bold())
-                                + Text("ft")
-                                    .font(.title3)
+                                if metricSystem {
+                                    Text(String(format: "%.0f", totalElevation))
+                                        .font(.title.bold())
+                                    + Text("m")
+                                        .font(.title3)
+                                } else {
+                                    Text(String(format: "%.0f", totalElevationInFeet))
+                                        .font(.title.bold())
+                                    + Text("ft")
+                                        .font(.title3)
+                                }
                                 Text("Elevation")
                                     .foregroundStyle(.gray)
                             }
@@ -128,7 +155,7 @@ struct MonthDriveHistoryView: View {
                             // List out drives
                             ForEach(drives) { drive in
                                 NavigationLink(value: drive) {
-                                    DrivePreviewView(drive: drive, width: viewWidth, selectedDrive: $selectedDrive)
+                                    DrivePreviewView(metricSystem: metricSystem, drive: drive, width: viewWidth, selectedDrive: $selectedDrive)
                                 }
                             }
                         }
@@ -151,9 +178,11 @@ struct MonthDriveHistoryView: View {
                 }
                 .onAppear {
                     drives = DataService.fetchDrivesInMonth(in: context, for: card.date)
-                    print("Elevations: \(drives.map { $0.elevation })")
                     
-                    
+                    let seconds = getTotalSeconds(from: drives)
+                    hrTotal = seconds / 3600
+                    let secsRemaining = seconds % (3600 * max(1, hrTotal))
+                    minTotal = secsRemaining / 60
                 }
             }
             .navigationTitle(card.name)
@@ -177,9 +206,9 @@ struct MonthDriveHistoryView: View {
         if numberOfHours > 0 {
             let secondsRemainder = secondsTotal - (numberOfHours * 3600)
             numberOfMinutes = secondsRemainder / 60
-            return "\(numberOfHours)h \(numberOfMinutes)m"
+            return "\(numberOfHours)hr \(numberOfMinutes)min"
         } else {
-            return "\(numberOfMinutes)m"
+            return "\(numberOfMinutes)min"
         }
     }
     
@@ -199,5 +228,5 @@ struct MonthDriveHistoryView: View {
 }
 
 #Preview {
-    MonthDriveHistoryView(card: MonthCard(name: "March 2025", date: .now))
+    MonthDriveHistoryView(metricSystem: true, card: MonthCard(name: "March 2025", date: .now))
 }

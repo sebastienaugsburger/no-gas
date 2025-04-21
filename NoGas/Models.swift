@@ -24,14 +24,14 @@ class DriveLocation {
     var latitude: Double
     var longitude: Double
     var createdAt: Date = Date.now
-    var speedMetersPerHour: Double = 0.0
+    var speedMetersPerSecond: Double = 0.0
     var altitude: Double = 0.0
     
-    init(latitude: Double, longitude: Double, createdAt: Date, speedMetersPerHour: Double, altitude: Double) {
+    init(latitude: Double, longitude: Double, createdAt: Date, speedMetersPerSecond: Double, altitude: Double) {
         self.latitude = latitude
         self.longitude = longitude
         self.createdAt = createdAt
-        self.speedMetersPerHour = speedMetersPerHour
+        self.speedMetersPerSecond = speedMetersPerSecond
         self.altitude = altitude
     }
 }
@@ -57,6 +57,12 @@ class Drive: Identifiable {
         return dateFormatter.string(from: startTime)
     }
     
+    var startTime24hrStr: String {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "EEEE MMM d, HH:mm"
+        return dateFormatter.string(from: startTime)
+    }
+    
     var absFuelValue: Double {
         abs(fuelValue)
     }
@@ -67,6 +73,10 @@ class Drive: Identifiable {
     
     var miles: Double {
         distance / 1609.34
+    }
+    
+    var kilometers: Double {
+        distance / 1000.0
     }
     
     var hrCount: Int {
@@ -118,6 +128,13 @@ class Drive: Identifiable {
         let metersPerHour = metersPerSec * 3600
         let milesPerHour = metersPerHour / 1609.34
         return milesPerHour
+    }
+    
+    var kilometersPerHour: Double {
+        let metersPerSec = (distance) / Double(secCountTotal)
+        let metersPerHour = metersPerSec * 3600
+        let kilometersPerHour = metersPerHour / 1000.0
+        return kilometersPerHour
     }
     
     init(startTime: Date) {

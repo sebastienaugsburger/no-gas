@@ -25,7 +25,7 @@ struct RecordDriveView: View {
     @State private var position: MapCameraPosition = .automatic
     @State private var region = MKCoordinateRegion(
             center: CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194), // Default: San Francisco
-            span: MKCoordinateSpan(latitudeDelta: 0.003, longitudeDelta: 0.003)
+            span: MKCoordinateSpan(latitudeDelta: 0.007, longitudeDelta: 0.007)
         )
     
     @State var isTimerRunning = false
@@ -77,8 +77,8 @@ struct RecordDriveView: View {
                                 
                                 Spacer()
                                 VStack(spacing: 0) {
-                                    if driveManager.speedMetersPerHour >= 0 {
-                                        Text(String(format: "%.0f", driveManager.speedMetersPerHour))
+                                    if driveManager.speedMilesPerHour >= 0 {
+                                        Text(String(format: "%.0f", driveManager.speedMilesPerHour))
                                             .font(.system(size: 38, weight: .bold))
                                     } else {
                                         Text("0")
@@ -135,7 +135,7 @@ struct RecordDriveView: View {
                     }
                     .background {
                         RoundedRectangle(cornerRadius: 20)
-                            .fill(Color(uiColor: .systemGray5))
+                            .fill(Color(uiColor: .systemGray6))
                     }
                     
                     if showButtons {
@@ -169,7 +169,7 @@ struct RecordDriveView: View {
                                 
                                 
                             } label: {
-                                Text(driveManager.isRecording ? "End" : "Start")
+                                Text(driveManager.isRecording ? "End drive" : "Start drive")
                                     .font(.system(size: 21, weight: .semibold))
                                     .foregroundColor(driveManager.isRecording ? Color.white:Color.black)
                                     .frame(maxWidth: .infinity, minHeight: 60, maxHeight: 60)
@@ -313,7 +313,7 @@ struct ReviewDriveMapViewRepresentable: UIViewRepresentable {
             if let polyline = overlay as? MKPolyline {
                 let renderer = MKPolylineRenderer(polyline: polyline)
                 renderer.strokeColor = UIColor.accent
-                renderer.lineWidth = 5.0
+                renderer.lineWidth = 3.0
                 return renderer
             }
             return MKOverlayRenderer()
@@ -332,7 +332,7 @@ struct ReviewDriveMapViewRepresentable: UIViewRepresentable {
                 let coordinates = locations.map { $0.coordinate }
                 let polyline = MKPolyline(coordinates: coordinates, count: coordinates.count)
                 mapView.addOverlay(polyline)
-                mapView.setVisibleMapRect(polyline.boundingMapRect, edgePadding: UIEdgeInsets(top: 100, left: 40, bottom: 100, right: 40), animated: true)
+                mapView.setVisibleMapRect(polyline.boundingMapRect, edgePadding: UIEdgeInsets(top: 40, left: 40, bottom: 40, right: 40), animated: true)
                
             }
         //}
@@ -376,7 +376,7 @@ struct RecordDriveMapViewRepresentable: UIViewRepresentable {
             if let polyline = overlay as? MKPolyline {
                 let renderer = MKPolylineRenderer(polyline: polyline)
                 renderer.strokeColor = UIColor.accent
-                renderer.lineWidth = 5.0
+                renderer.lineWidth = 3.0
                 return renderer
             }
             return MKOverlayRenderer()

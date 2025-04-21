@@ -82,164 +82,36 @@ struct HomeStatsView: View {
     @EnvironmentObject private var driveManager: DriveManager
     @Environment(\.modelContext) private var modelContext
     
+    @AppStorage("metricSystem") var metricSystem: Bool = false
     @AppStorage("evCar") var evCar: Bool = true
     @AppStorage("gasPrice") var gasPrice: Double = 4.07
+    @AppStorage("metricFuelPrice") var metricFuelPrice: Double = 7.00
     @AppStorage("mpg") var mpg: Int = 32
+    @AppStorage("kmpl") var kmpl: Int = 42
     
     @State private var selectedDrive: Drive?
     @State private var showRecordDrive: Bool = false
     @State var monthCards: [MonthCard] = []
     @State private var showMostRecentTripReviewView = false
+    @State private var showSettings: Bool = false
     
     var body: some View {
         GeometryReader { geo in
             let viewWidth = geo.size.width
+            
             NavigationStack {
                 ZStack(alignment: .bottomTrailing) {
                     ScrollView(showsIndicators: false) {
-                        VStack(spacing: 20) {
-                            Button {
-                                showRecordDrive = true
-                            } label: {
-                                Text("New trip")
-                                    .font(.system(size: 21, weight: .semibold))
-                                    .foregroundStyle(.black)
-                                    .frame(minWidth: .zero, maxWidth: .infinity, minHeight: 60)
-                                    .background {
-                                        RoundedRectangle(cornerRadius: 12)
-                                            .fill(.accent)
-                                    }
-                            }
-                            .fullScreenCover(isPresented: $showRecordDrive) {
-                                RecordDriveView(showRecordDriveView: $showRecordDrive)
-                                    .environmentObject(driveManager)
-                                    .onAppear {
-                                        self.driveManager.startUpdatingLocation()
-                                    }
-                                    .onDisappear {
-                                        self.driveManager.stopUpdatingLocation()
-                                        prepareSnapShotAndMonthsList()
-                                    }
-                            }
-                            .padding(.horizontal, 20)
-                            
-                            VStack(spacing: 20) {
-//                                Group {
-//                                    HStack(spacing: 10) {
-//                                        VStack(alignment: .leading) {
-//                                            Text("$")
-//                                                .font(.title)
-//                                                .foregroundStyle(fuelCostBalance > 0 ? Color.red:Color.green)
-//                                            + Text(String(format: "%.2f", absFuelCostBalance))
-//                                                .font(.title.bold())
-//                                                .foregroundStyle(fuelCostBalance > 0 ? Color.red:Color.green)
-//                                            Text("Total fuel cost")
-//                                        }
-//                                        .padding(.horizontal)
-//                                        .frame(width: viewWidth/2 - 25, alignment: .leading)
-//                                        .padding(.vertical)
-//                                        .background {
-//                                            RoundedRectangle(cornerRadius: 15)
-//                                                .fill(Color(uiColor: UIColor.systemGray5))
-//                                        }
-//                                        
-//                                        VStack(alignment: .leading) {
-//                                            Text("\(milesTraveled, specifier: "%.2f")")
-//                                                .font(.title.bold())
-//                                            + Text("mi")
-//                                                .font(.title3)
-//                                            Text("Total distance")
-//                                        }
-//                                        .padding(.horizontal)
-//                                        .frame(width: viewWidth/2 - 25, alignment: .leading)
-//                                        .padding(.vertical)
-//                                        .background {
-//                                            RoundedRectangle(cornerRadius: 15)
-//                                                .fill(Color(uiColor: UIColor.systemGray5))
-//                                        }
-//                                    }
-//                                    .padding(.horizontal, 20)
-//                                }
-                                
-                                Group {
-                                    HStack(spacing: 10) {
-                                        NavigationLink {
-                                            EditGasPriceView(gasPrice: $gasPrice)
-                                        } label: {
-                                            HStack {
-                                                VStack(alignment: .leading) {
-                                                    Text("$")
-                                                        .font(.title)
-                                                    + Text(String(format: "%.2f", gasPrice))
-                                                        .font(.title.bold())
-                                                    Text("Fuel price/gal.")
-                                                        .foregroundStyle(.gray)
-                                                }
-                                                
-                                                Spacer()
-                                                
-                                                Image(systemName: "chevron.right")
-                                                    .foregroundStyle(.gray)
-                                            }
-                                            .foregroundStyle(Color.primary)
-                                            .padding(.horizontal)
-                                            .frame(width: viewWidth/2 - 25, alignment: .leading)
-                                            .padding(.vertical)
-                                            .background {
-                                                RoundedRectangle(cornerRadius: 12)
-                                                    .fill(Color(uiColor: UIColor.systemGray5))
-                                            }
-                                        }
-                                        NavigationLink {
-                                            EditMPGView(mpg: $mpg)
-                                        } label: {
-                                            HStack {
-                                                VStack(alignment: .leading) {
-                                                    Text("\(mpg)")
-                                                        .font(.title.bold())
-                                                    Text("MPG")
-                                                        .foregroundStyle(.gray)
-                                                }
-                                                
-                                                Spacer()
-                                                
-                                                Image(systemName: "chevron.right")
-                                                    .foregroundStyle(.gray)
-                                            }
-                                            .foregroundStyle(Color.primary)
-                                            .padding(.horizontal)
-                                            .frame(width: viewWidth/2 - 25, alignment: .leading)
-                                            .padding(.vertical)
-                                            .background {
-                                                RoundedRectangle(cornerRadius: 12)
-                                                    .fill(Color(uiColor: UIColor.systemGray5))
-                                            }
-                                        }
-                                    }
-                                    .padding(.horizontal, 20)
-                                }
-                                
-                                Toggle("Electric Vehicle", isOn: $evCar)
-                                    .bold()
-                                    .tint(.accentColor)
-                                    .frame(minWidth: .zero, maxWidth: .infinity, minHeight: 60)
-                                    .padding(.horizontal)
-                                    .background {
-                                        RoundedRectangle(cornerRadius: 12)
-                                            .fill(Color(uiColor: .systemGray5))
-                                    }
-                                    .padding(.horizontal, 20)
-                            }
-                            
+                        VStack(alignment: .leading, spacing: 20) {
                             if let drive = self.driveManager.mostRecentDrive {
                                 VStack(alignment: .leading, spacing: 10) {
                                     HStack {
-                                        Text("Most recent")
+                                        Text("Most recent drive")
                                             .font(.title3.bold())
                                         Spacer()
                                     }
                                     
-                                    DrivePreviewView(drive: drive, width: viewWidth, selectedDrive: $selectedDrive)
+                                    DrivePreviewView(metricSystem: metricSystem, drive: drive, width: viewWidth, selectedDrive: $selectedDrive)
                                         .onTapGesture {
                                             self.showMostRecentTripReviewView = true
                                         }
@@ -249,12 +121,13 @@ struct HomeStatsView: View {
                                             }
                                         }
                                 }
-                                .padding(.horizontal, 20)
                             }
+                            
+                            
                             
                             VStack(alignment: .leading, spacing: 10) {
                                 HStack {
-                                    Text("Trips")
+                                    Text("Drive history")
                                         .font(.title3.bold())
                                     Spacer()
                                 }
@@ -269,20 +142,46 @@ struct HomeStatsView: View {
                                                 .frame(maxWidth: .infinity, minHeight: 60, alignment: .leading)
                                                 .background {
                                                     RoundedRectangle(cornerRadius: 12)
-                                                        .fill(Color(uiColor: .systemGray5))
+                                                        .fill(Color(uiColor: .systemGray6))
                                                 }
                                         }
                                     }
                                 }
                             }
-                            .padding(.horizontal, 20)
-                            .padding(.bottom)
                         }
+                        .padding(.horizontal, 20)
+                        .padding(.vertical)
+                    }
+                    .safeAreaInset(edge: .bottom) {
+                        Button {
+                            showRecordDrive = true
+                        } label: {
+                            Text("New drive")
+                                .font(.system(size: 21, weight: .semibold))
+                                .foregroundStyle(.black)
+                                .frame(minWidth: .zero, maxWidth: .infinity, minHeight: 60)
+                                .background {
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(.accent)
+                                }
+                        }
+                        .fullScreenCover(isPresented: $showRecordDrive) {
+                            RecordDriveView(showRecordDriveView: $showRecordDrive)
+                                .environmentObject(driveManager)
+                                .onAppear {
+                                    self.driveManager.startUpdatingLocation()
+                                }
+                                .onDisappear {
+                                    self.driveManager.stopUpdatingLocation()
+                                    prepareSnapShotAndMonthsList()
+                                }
+                        }
+                        .padding(.horizontal, 20)
                         .padding(.vertical)
                     }
                 }
                 .navigationDestination(for: MonthCard.self) { card in
-                    MonthDriveHistoryView(card: card)
+                    MonthDriveHistoryView(metricSystem: metricSystem, card: card)
                 }
                 .alert(item: $selectedDrive) { drive in
                     Alert(
@@ -293,6 +192,18 @@ struct HomeStatsView: View {
                         },
                         secondaryButton: .cancel()
                     )
+                }
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button {
+                            showSettings = true
+                        } label: {
+                            Image(systemName: "gearshape")
+                        }
+                        .fullScreenCover(isPresented: $showSettings) {
+                            DriveSettingsView()
+                        }
+                    }
                 }
                 .onAppear {
                     prepareSnapShotAndMonthsList()
@@ -346,6 +257,7 @@ struct HomeStatsView: View {
 }
 
 struct DrivePreviewView: View {
+    let metricSystem: Bool
     @Bindable var drive: Drive
     let width: CGFloat
     @Binding var selectedDrive: Drive?
@@ -403,10 +315,17 @@ struct DrivePreviewView: View {
                         }
                         
                         VStack(alignment: .leading, spacing: 0) {
-                            Text("\(drive.miles, specifier: "%.1f")")
-                                .font(.title2.bold())
-                            + Text("mi")
-                                .font(.title3)
+                            if metricSystem {
+                                Text("\(drive.kilometers, specifier: "%.1f")")
+                                    .font(.title2.bold())
+                                + Text("km")
+                                    .font(.title3)
+                            } else {
+                                Text("\(drive.miles, specifier: "%.1f")")
+                                    .font(.title2.bold())
+                                + Text("mi")
+                                    .font(.title3)
+                            }
                             Text("Distance")
                                 .font(.caption)
                                 .foregroundStyle(.gray)
@@ -417,12 +336,12 @@ struct DrivePreviewView: View {
                                 if drive.hrCount > 0 {
                                     Text("\(drive.hrCount)")
                                         .font(.title2.bold())
-                                    + Text("h")
+                                    + Text("hr")
                                         .font(.title3)
                                 }
                                 Text("\(drive.minCount)")
                                     .font(.title2.bold())
-                                + Text("m")
+                                + Text("min")
                                     .font(.title3)
 //                                Text("\(drive.secCount)")
 //                                    .font(.title2.bold())
@@ -435,20 +354,34 @@ struct DrivePreviewView: View {
                         }
                         
                         VStack(alignment: .leading, spacing: 0) {
-                            Text("\(drive.milesPerHour, specifier: "%.0f")")
-                                .font(.title2.bold())
-                            + Text("mph")
-                                .font(.title3)
+                            if metricSystem {
+                                Text("\(drive.kilometersPerHour, specifier: "%.0f")")
+                                    .font(.title2.bold())
+                                + Text("kmph")
+                                    .font(.title3)
+                            } else {
+                                Text("\(drive.milesPerHour, specifier: "%.0f")")
+                                    .font(.title2.bold())
+                                + Text("mph")
+                                    .font(.title3)
+                            }
                             Text("Avg. speed")
                                 .font(.caption)
                                 .foregroundStyle(.gray)
                         }
                     
                         VStack(alignment: .leading, spacing: 0) {
-                            Text(String(format: "%.0f", drive.elevationClimbedInFeet))
-                                .font(.title2.bold())
-                            + Text("ft")
-                                .font(.title3)
+                            if metricSystem {
+                                Text(String(format: "%.0f", drive.elevation))
+                                    .font(.title2.bold())
+                                + Text("m")
+                                    .font(.title3)
+                            } else {
+                                Text(String(format: "%.0f", drive.elevationClimbedInFeet))
+                                    .font(.title2.bold())
+                                + Text("ft")
+                                    .font(.title3)
+                            }
                             Text("Elevation")
                                 .font(.caption)
                                 .foregroundStyle(.gray)
@@ -461,35 +394,40 @@ struct DrivePreviewView: View {
             .foregroundStyle(.white)
             .background {
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(Color(uiColor: UIColor.systemGray5))
+                    .fill(Color(uiColor: UIColor.systemGray6))
             }
             .clipShape(RoundedRectangle(cornerRadius: 12))
             
             // Drive start time
             HStack {
-                Text(drive.startTimeStr)
-                    .font(.system(size: 15, weight: .regular))
-                    .foregroundStyle(.gray)
+                if metricSystem {
+                    Text(drive.startTime24hrStr)
+                        .font(.system(size: 15, weight: .regular))
+                        .foregroundStyle(.gray)
+                } else {
+                    Text(drive.startTimeStr)
+                        .font(.system(size: 15, weight: .regular))
+                        .foregroundStyle(.gray)
                     //.shadow(color: .black, radius: 5)
+                }
                 
                 Spacer()
-                
-                
             }
+            .padding(.horizontal)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-//        .onAppear {
-//            if drive.tripPreviewImageData == nil {
-//                let size = CGSize(width: mapWidth, height: mapHeight)
-//                let coordinates = drive.orderedLocations.map {
-//                    return CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude)
-//                }
-//                let generator = MapSnapshotGenerator()
-//                generator.generateSnapshot(from: coordinates, size: size) { data in
-//                    drive.tripPreviewImageData = data
-//                }
-//            }
-//        }
+        .onAppear {
+            //if drive.tripPreviewImageData == nil {
+                let size = CGSize(width: mapWidth, height: mapHeight)
+                let coordinates = drive.orderedLocations.map {
+                    return CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude)
+                }
+                let generator = MapSnapshotGenerator()
+                generator.generateSnapshot(from: coordinates, size: size) { data in
+                    drive.tripPreviewImageData = data
+                }
+            //}
+        }
     }
 }
 

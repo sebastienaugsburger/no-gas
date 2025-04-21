@@ -40,13 +40,7 @@ class MapSnapshotGenerator {
                 let points = coordinates.map { coordinate in
                     snapshot.point(for: coordinate)
                 }
-
-                let testNumbers = [0, 1, 2, 3, 4]
                 
-                for num in testNumbers.dropFirst() {
-                    print("\(num)")
-                }
-
                 //var previousPoint: CGPoint?
                 
                 let path = UIBezierPath()
@@ -64,7 +58,7 @@ class MapSnapshotGenerator {
                 
                 path.lineJoinStyle = .round
                 path.lineCapStyle = .round
-                path.lineWidth = 5
+                path.lineWidth = 3
                 UIColor.accent.setStroke()
                 path.stroke()
             }

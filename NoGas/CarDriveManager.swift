@@ -19,7 +19,8 @@ class DriveManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     @Published var hasCurrentLocation: Bool = false
     private var locationManager = CLLocationManager()
     private var lastLocation: CLLocation?
-    @Published var speedMetersPerHour: Double = 0.0
+    @Published var speedMilesPerHour: Double = 0.0
+    @Published var speedMetersPerSecond: Double = 0.0
     @Published var altitude: Double = 0
     @Published var elevationClimbed: Double = 0
     //@Published var lastLocation: CLLocation?
@@ -115,13 +116,13 @@ class DriveManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             let secondsInterval = newCreatedAt.secondsIntervalSinceOldDate(oldCreatedAt)
             let distance = last.distance(from: newLocation)
             self.currentDrive?.distance += distance
-            let speedMetersPerHour = (distance / Double(secondsInterval)) * 3600 / 1609.34
+            let speedMetersPerSec = distance / Double(secondsInterval)
             if isRecording {
-                let driveLocation = DriveLocation(latitude: latitude, longitude: longitude, createdAt: newCreatedAt, speedMetersPerHour: speedMetersPerHour, altitude: altitude)
+                let driveLocation = DriveLocation(latitude: latitude, longitude: longitude, createdAt: newCreatedAt, speedMetersPerSecond: speedMetersPerSec, altitude: altitude)
                 
                 self.currentDrive?.locations.append(driveLocation)
             }
-            self.speedMetersPerHour = speedMetersPerHour
+            self.speedMilesPerHour = speedMilesPerHour
             self.altitude = altitude
         }
         
