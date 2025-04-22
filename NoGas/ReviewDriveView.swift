@@ -74,7 +74,16 @@ struct ReviewDriveView: View {
     var body: some View {
         GeometryReader { geo in
             ScrollView {
-                VStack(spacing: 20) {
+                VStack(alignment: .leading, spacing: 20) {
+                    if metricSystem {
+                        Text(drive.startTime24hrStr)
+                            .bold()
+                    } else {
+                        Text(drive.startTimeStr)
+                            .bold()
+                    }
+                    
+                    
                     if let imageData = drive.tripPreviewImageData {
                         if let image = UIImage(data: imageData) {
                             NavigationLink {
@@ -308,7 +317,8 @@ struct ReviewDriveView: View {
                 .padding(.horizontal, 20)
                 .padding(.vertical)
             }
-            .navigationTitle("\(drive.startTimeStr)")
+            .navigationTitle("Drive")
+            .navigationBarTitleDisplayMode(.inline)
             .scrollIndicators(.hidden)
             .onAppear {
                 getKmphSpeeds()
