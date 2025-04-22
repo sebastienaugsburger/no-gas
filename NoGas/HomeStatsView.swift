@@ -82,12 +82,7 @@ struct HomeStatsView: View {
     @EnvironmentObject private var driveManager: DriveManager
     @Environment(\.modelContext) private var modelContext
     
-    @AppStorage("metricSystem") var metricSystem: Bool = false
-    @AppStorage("evCar") var evCar: Bool = true
-    @AppStorage("gasPrice") var gasPrice: Double = 4.07
-    @AppStorage("metricFuelPrice") var metricFuelPrice: Double = 7.00
-    @AppStorage("mpg") var mpg: Int = 32
-    @AppStorage("kmpl") var kmpl: Int = 42
+    @AppStorage("metricSystem") var metricSystem: Bool = true
     
     @State private var selectedDrive: Drive?
     @State private var showRecordDrive: Bool = false
@@ -122,8 +117,6 @@ struct HomeStatsView: View {
                                         }
                                 }
                             }
-                            
-                            
                             
                             VStack(alignment: .leading, spacing: 10) {
                                 HStack {
@@ -417,7 +410,7 @@ struct DrivePreviewView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .onAppear {
-            //if drive.tripPreviewImageData == nil {
+            if drive.tripPreviewImageData == nil {
                 let size = CGSize(width: mapWidth, height: mapHeight)
                 let coordinates = drive.orderedLocations.map {
                     return CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude)
@@ -426,7 +419,56 @@ struct DrivePreviewView: View {
                 generator.generateSnapshot(from: coordinates, size: size) { data in
                     drive.tripPreviewImageData = data
                 }
-            //}
+            }
+        }
+    }
+}
+
+struct EditPetrolPriceView: View {
+    @Binding var price: Double
+    
+    var formatter: Formatter {
+        let formatter = NumberFormatter()
+        formatter.minimumFractionDigits = 0
+        formatter.maximumFractionDigits = 2
+        return formatter
+    }
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 0) {
+                Text("$")
+                TextField("", value: $price, formatter: formatter)
+            }
+                .padding()
+            Divider()
+            Spacer()
+        }
+        .navigationTitle("Petrol Price")
+        .onDisappear {
+            if price <= 0 {
+                price = 7.00
+            }
+        }
+    }
+}
+
+struct EditKMPGView: View {
+    @Binding var value: Int
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 0) {
+                TextField("", value: $value, formatter: NumberFormatter())
+            }
+            .padding()
+            Divider()
+            Spacer()
+        }
+        .navigationTitle("KMPG")
+        .onDisappear {
+            if value <= 0 {
+                value = 40
+            }
         }
     }
 }
@@ -436,7 +478,7 @@ struct EditGasPriceView: View {
     
     var formatter: Formatter {
         let formatter = NumberFormatter()
-        formatter.minimumFractionDigits = 2
+        formatter.minimumFractionDigits = 0
         formatter.maximumFractionDigits = 2
         return formatter
     }
@@ -450,7 +492,7 @@ struct EditGasPriceView: View {
             Divider()
             Spacer()
         }
-        .navigationTitle("Fuel Price")
+        .navigationTitle("Gas Price")
         .onDisappear {
             if gasPrice <= 0 {
                 gasPrice = 3.50

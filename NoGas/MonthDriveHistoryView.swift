@@ -21,6 +21,8 @@ struct MonthDriveHistoryView: View {
     @State private var minTotal = 0
     @State private var hrTotal = 0
     
+    let statBlockHeight: CGFloat = 130
+    
     var distanceMiles: Double {
         drives.map { $0.miles }.reduce(0, +)
     }
@@ -48,14 +50,14 @@ struct MonthDriveHistoryView: View {
                 VStack(spacing: 20) {
                     VStack(alignment: .leading, spacing: 10) {
                         HStack {
-                            Text("Stats")
+                            Text("Stats summary")
                                 .font(.title3.bold())
                             Spacer()
                         }
                         .padding(.horizontal, 20)
                         
                         HStack(spacing: 10) {
-                            VStack(alignment: .leading, spacing: 0) {
+                            VStack(spacing: 0) {
                                 Text("$")
                                     .font(.title)
                                     .foregroundStyle(totalFuelCost < 0 ? Color.red:Color.blue)
@@ -65,14 +67,13 @@ struct MonthDriveHistoryView: View {
                                 Text("Fuel cost")
                                     .foregroundStyle(.gray)
                             }
-                            .padding()
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .frame(maxWidth: .infinity, minHeight: statBlockHeight)
                             .background {
                                 RoundedRectangle(cornerRadius: 12)
-                                    .fill(Color(uiColor: .systemGray5))
+                                    .fill(Color(uiColor: .systemGray6))
                             }
                             
-                            VStack(alignment: .leading, spacing: 0) {
+                            VStack(spacing: 0) {
                                 if metricSystem {
                                     Text("\(distanceKilometers, specifier: distanceKilometers >= 10 ? "%.0f":"%.1f")")
                                         .font(.title.bold())
@@ -87,38 +88,38 @@ struct MonthDriveHistoryView: View {
                                 Text("Distance")
                                     .foregroundStyle(.gray)
                             }
-                            .padding()
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .frame(maxWidth: .infinity, minHeight: statBlockHeight)
                             .background {
                                 RoundedRectangle(cornerRadius: 12)
-                                    .fill(Color(uiColor: .systemGray5))
+                                    .fill(Color(uiColor: .systemGray6))
                             }
                         }
                         .padding(.horizontal, 20)
                         
                         HStack(spacing: 10) {
-                            VStack(alignment: .leading, spacing: 0) {
-                                if hrTotal > 0 {
-                                    Text("\(hrTotal)")
+                            VStack(spacing: 0) {
+                                HStack(spacing: 5) {
+                                    if hrTotal > 0 {
+                                        Text("\(hrTotal)")
+                                            .font(.title.bold())
+                                        + Text("hr")
+                                            .font(.title3)
+                                    }
+                                    Text("\(minTotal)")
                                         .font(.title.bold())
                                     + Text("min")
                                         .font(.title3)
                                 }
-                                Text("\(minTotal)")
-                                    .font(.title.bold())
-                                + Text("min")
-                                    .font(.title3)
                                 Text("Time")
                                     .foregroundStyle(.gray)
                             }
-                            .padding()
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .frame(maxWidth: .infinity, minHeight: statBlockHeight)
                             .background {
                                 RoundedRectangle(cornerRadius: 12)
-                                    .fill(Color(uiColor: .systemGray5))
+                                    .fill(Color(uiColor: .systemGray6))
                             }
                             
-                            VStack(alignment: .leading, spacing: 0) {
+                            VStack(spacing: 0) {
                                 if metricSystem {
                                     Text(String(format: "%.0f", totalElevation))
                                         .font(.title.bold())
@@ -133,11 +134,10 @@ struct MonthDriveHistoryView: View {
                                 Text("Elevation")
                                     .foregroundStyle(.gray)
                             }
-                            .padding()
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .frame(maxWidth: .infinity, minHeight: statBlockHeight)
                             .background {
                                 RoundedRectangle(cornerRadius: 12)
-                                    .fill(Color(uiColor: .systemGray5))
+                                    .fill(Color(uiColor: .systemGray6))
                             }
                         }
                         .padding(.horizontal, 20)
@@ -145,7 +145,7 @@ struct MonthDriveHistoryView: View {
                     
                     VStack(alignment: .leading, spacing: 10) {
                         HStack {
-                            Text("Trips (\(drives.count))")
+                            Text("Drives \(drives.count)")
                                 .font(.title3.bold())
                             Spacer()
                         }

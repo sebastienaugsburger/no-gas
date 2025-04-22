@@ -19,11 +19,18 @@ class DriveManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     @Published var hasCurrentLocation: Bool = false
     private var locationManager = CLLocationManager()
     private var lastLocation: CLLocation?
-    @Published var speedMilesPerHour: Double = 0.0
     @Published var speedMetersPerSecond: Double = 0.0
     @Published var altitude: Double = 0
     @Published var elevationClimbed: Double = 0
     //@Published var lastLocation: CLLocation?
+    
+    var speedMilesPerHour: Double {
+        (speedMetersPerSecond * 3600) / 1609.34
+    }
+    
+    var speedKilometersPerHour: Double {
+        (speedMetersPerSecond * 3600) / 1000.0
+    }
     
     override init() {
         super.init()
@@ -61,6 +68,32 @@ class DriveManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         self.isRecording = false
         if drive.locations.count > 1 {
             guard let firstLocation =  drive.orderedLocations.first else { return }
+            
+            let locations = drive.orderedLocations
+            let count = locations.count
+            let speedMean = locations.map(\.speedMetersPerSecond).reduce(0, +) / Double(drive.orderedLocations.count)
+            var numResults: Double = 0
+            for location in locations {
+                let speed = location.speedMetersPerSecond
+                let numResult = pow(speed - speedMean, 2)
+                numResults += numResult
+            }
+            let speedStdDev = sqrt(numResults/Double(count))
+            print("Standard Deviation (m/s): \(speedStdDev)")
+            print("Standard Deviation (mph): \(speedStdDev / 1609.34 * 3600)")
+            print("Standard Deviation (kmph): \(speedStdDev / 1000 * 3600)")
+            
+            let limit = speedStdDev * 3
+            
+            drive.locations = locations.compactMap { loc in
+                let newLoc = loc
+                if newLoc.speedMetersPerSecond - speedMean > limit {
+                    return nil
+                } else if newLoc.speedMetersPerSecond - speedMean < -limit {
+                    return nil
+                }
+                return newLoc
+            }
             
             var previousAlt: Double = firstLocation.altitude
             
@@ -116,13 +149,14 @@ class DriveManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             let secondsInterval = newCreatedAt.secondsIntervalSinceOldDate(oldCreatedAt)
             let distance = last.distance(from: newLocation)
             self.currentDrive?.distance += distance
-            let speedMetersPerSec = distance / Double(secondsInterval)
+            let speedMetersPerSec = min(45, distance / Double(secondsInterval))
+            
             if isRecording {
                 let driveLocation = DriveLocation(latitude: latitude, longitude: longitude, createdAt: newCreatedAt, speedMetersPerSecond: speedMetersPerSec, altitude: altitude)
                 
                 self.currentDrive?.locations.append(driveLocation)
             }
-            self.speedMilesPerHour = speedMilesPerHour
+            self.speedMetersPerSecond = speedMetersPerSec
             self.altitude = altitude
         }
         

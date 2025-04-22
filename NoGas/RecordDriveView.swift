@@ -13,9 +13,12 @@ struct RecordDriveView: View {
     @EnvironmentObject var driveManager: DriveManager
     @Environment(\.modelContext) private var modelContext
     
+    @AppStorage("metricSystem") var metricSystem: Bool = true
     @AppStorage("evCar") var evCar: Bool = true
     @AppStorage("gasPrice") var gasPrice: Double = 4.07
     @AppStorage("mpg") var mpg: Int = 32
+    @AppStorage("metricFuelPrice") var metricFuelPrice: Double = 7.00
+    @AppStorage("kmpl") var kmpl: Int = 42
     //@AppStorage("fuelCostBalance") var fuelCostBalance: Double = 0.0
     //@AppStorage("milesTraveled") var milesTraveled: Double = 0.0
     //@AppStorage("driveCount") var driveCount: Int = 0
@@ -24,8 +27,8 @@ struct RecordDriveView: View {
     
     @State private var position: MapCameraPosition = .automatic
     @State private var region = MKCoordinateRegion(
-            center: CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194), // Default: San Francisco
-            span: MKCoordinateSpan(latitudeDelta: 0.007, longitudeDelta: 0.007)
+            center: CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194),
+            span: MKCoordinateSpan(latitudeDelta: 0.015, longitudeDelta: 0.015)
         )
     
     @State var isTimerRunning = false
@@ -37,9 +40,15 @@ struct RecordDriveView: View {
     
     @State private var debounceWorkItem: DispatchWorkItem?
     
-    var distanceString: String {
+    var distanceMiString: String {
         let distanceInMeters = driveManager.currentDrive?.distance ?? 0
         let distanceInMiles = distanceInMeters / 1609.34
+        return String(format: distanceInMiles >= 10 ? "%.0f":"%.1f", distanceInMiles)
+    }
+    
+    var distanceKmString: String {
+        let distanceInMeters = driveManager.currentDrive?.distance ?? 0
+        let distanceInMiles = distanceInMeters / 1000.0
         return String(format: distanceInMiles >= 10 ? "%.0f":"%.1f", distanceInMiles)
     }
     
@@ -77,14 +86,22 @@ struct RecordDriveView: View {
                                 
                                 Spacer()
                                 VStack(spacing: 0) {
-                                    if driveManager.speedMilesPerHour >= 0 {
-                                        Text(String(format: "%.0f", driveManager.speedMilesPerHour))
-                                            .font(.system(size: 38, weight: .bold))
-                                    } else {
+                                    
+                                    if driveManager.speedMetersPerSecond > 0 && driveManager.speedMetersPerSecond < .infinity {
+                                        if metricSystem {
+                                            Text(String(format: "%.0f", driveManager.speedKilometersPerHour))
+                                                .font(.system(size: 38, weight: .bold))
+                                        } else {
+                                            Text(String(format: "%.0f", driveManager.speedMilesPerHour))
+                                                .font(.system(size: 38, weight: .bold))
+                                            
+                                        }
+                                    } else  {
                                         Text("0")
                                             .font(.system(size: 38, weight: .bold))
                                     }
-                                    Text("MPH")
+                                    
+                                    Text(metricSystem ? "KMPH":"MPH")
                                         .font(.system(size: 15, weight: .semibold))
                                 }
                                 .foregroundStyle(.black)
@@ -102,10 +119,17 @@ struct RecordDriveView: View {
                         
                         HStack(spacing: 20) {
                             VStack(alignment: .leading, spacing: 0) {
-                                Text(distanceString)
-                                    .font(.title.bold())
-                                + Text("mi")
-                                    .font(.title3)
+                                if metricSystem {
+                                    Text(distanceKmString)
+                                        .font(.title.bold())
+                                    + Text("km")
+                                        .font(.title3)
+                                } else {
+                                    Text(distanceMiString)
+                                        .font(.title.bold())
+                                    + Text("mi")
+                                        .font(.title3)
+                                }
                                 Text("Distance")
                                     .foregroundStyle(.gray)
                                     //.font(.caption)
@@ -142,10 +166,18 @@ struct RecordDriveView: View {
                         HStack(spacing: 10) {
                             // Start/Stop drive recording
                             Button {
+                                
                                 if driveManager.isRecording {
                                     self.showButtons = false
                                     if let drive = driveManager.currentDrive {
-                                        drive.fuelValue = (drive.distance / 1609.34)/Double(mpg) * gasPrice
+                                        // Imperial or metric for fuel cost calc
+                                        if metricSystem {
+                                            drive.fuelValue = (drive.distance / 1000.0)/Double(kmpl) * metricFuelPrice
+                                        } else {
+                                            drive.fuelValue = (drive.distance / 1609.34)/Double(mpg) * gasPrice
+                                        }
+                                        
+                                        // Negative fuel cost for EV
                                         if evCar {
                                             drive.fuelValue = drive.fuelValue * -1
                                         }
@@ -165,9 +197,9 @@ struct RecordDriveView: View {
                                     // start UI updates
                                     self.startTimer()
                                 }
+                                
                                 isTimerRunning.toggle()
-                                
-                                
+                            
                             } label: {
                                 Text(driveManager.isRecording ? "End drive" : "Start drive")
                                     .font(.system(size: 21, weight: .semibold))

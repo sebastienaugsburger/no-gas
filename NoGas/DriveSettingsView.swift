@@ -31,7 +31,7 @@ struct DriveSettingsView: View {
                         HStack(spacing: 10) {
                             if metricSystem {
                                 NavigationLink {
-                                    EditGasPriceView(gasPrice: $metricFuelPrice)
+                                    EditPetrolPriceView(price: $metricFuelPrice)
                                 } label: {
                                     HStack {
                                         VStack(alignment: .leading) {
@@ -59,7 +59,7 @@ struct DriveSettingsView: View {
                                 }
                                 
                                 NavigationLink {
-                                    EditMPGView(mpg: $kmpl)
+                                    EditKMPGView(value: $kmpl)
                                 } label: {
                                     HStack {
                                         VStack(alignment: .leading) {
