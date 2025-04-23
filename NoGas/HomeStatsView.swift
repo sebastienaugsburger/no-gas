@@ -118,25 +118,27 @@ struct HomeStatsView: View {
                                 }
                             }
                             
-                            VStack(alignment: .leading, spacing: 10) {
-                                HStack {
-                                    Text("Drive history")
-                                        .font(.title3.bold())
-                                    Spacer()
-                                }
-                                
-                                VStack(spacing: 20) {
-                                    ForEach(monthCards) { card in
-                                        NavigationLink(value: card) {
-                                            Text(card.name)
-                                                .bold()
-                                                .foregroundStyle(.white)
-                                                .padding(.horizontal)
-                                                .frame(maxWidth: .infinity, minHeight: 60, alignment: .leading)
-                                                .background {
-                                                    RoundedRectangle(cornerRadius: 12)
-                                                        .fill(Color(uiColor: .systemGray6))
-                                                }
+                            if monthCards.isEmpty == false {
+                                VStack(alignment: .leading, spacing: 10) {
+                                    HStack {
+                                        Text("Drive history")
+                                            .font(.title3.bold())
+                                        Spacer()
+                                    }
+                                    
+                                    VStack(spacing: 20) {
+                                        ForEach(monthCards) { card in
+                                            NavigationLink(value: card) {
+                                                Text(card.name)
+                                                    .bold()
+                                                    .foregroundStyle(.white)
+                                                    .padding(.horizontal)
+                                                    .frame(maxWidth: .infinity, minHeight: 60, alignment: .leading)
+                                                    .background {
+                                                        RoundedRectangle(cornerRadius: 12)
+                                                            .fill(Color(uiColor: .systemGray6))
+                                                    }
+                                            }
                                         }
                                     }
                                 }
@@ -171,6 +173,15 @@ struct HomeStatsView: View {
                         }
                         .padding(.horizontal, 20)
                         .padding(.vertical)
+                    }
+                }
+                .overlay {
+                    if self.driveManager.mostRecentDrive == nil && monthCards.isEmpty {
+                        ContentUnavailableView(
+                            "No Drives Yet",
+                            systemImage: "steeringwheel",
+                            description: Text("Your completed drives will display here.")
+                        )
                     }
                 }
                 .navigationDestination(for: MonthCard.self) { card in

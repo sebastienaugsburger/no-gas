@@ -18,35 +18,45 @@ struct DriveSettingsView: View {
     @AppStorage("mpg") var mpg: Int = 32
     @AppStorage("kmpl") var kmpl: Int = 42
     
+    let togglesHeight: CGFloat = 45
+    let titlesFontSize: CGFloat = 17
+    
     var body: some View {
         GeometryReader { geo in
             
             let viewWidth = geo.size.width
             NavigationStack {
-                VStack(spacing: 20) {
+                VStack(spacing: 25) {
                     VStack(alignment: .leading, spacing: 10) {
                         Text(metricSystem ? "Petrol info":"Gas info")
-                            .font(.title3.bold())
+                            .font(.system(size: titlesFontSize, weight: .semibold))
                         
                         HStack(spacing: 10) {
                             if metricSystem {
                                 NavigationLink {
                                     EditPetrolPriceView(price: $metricFuelPrice)
                                 } label: {
-                                    HStack {
-                                        VStack(alignment: .leading) {
-                                            Text("$")
-                                                .font(.title)
-                                            + Text(String(format: "%.2f", metricFuelPrice))
-                                                .font(.title.bold())
-                                            Text("Petrol price ($/l).")
+                                    ZStack (alignment: .top) {
+                                        HStack {
+                                            Spacer()
+                                            
+                                            Image(systemName: "chevron.right")
                                                 .foregroundStyle(.gray)
+                                                .padding(.top, 5)
                                         }
                                         
-                                        Spacer()
-                                        
-                                        Image(systemName: "chevron.right")
-                                            .foregroundStyle(.gray)
+                                        HStack {
+                                            VStack(alignment: .leading) {
+                                                Text("$")
+                                                    .font(.title3)
+                                                + Text(String(format: "%.2f", metricFuelPrice))
+                                                    .font(.title3.bold())
+                                                Text("Petrol price")
+                                                    .foregroundStyle(.gray)
+                                            }
+                                            
+                                            Spacer()
+                                        }
                                     }
                                     .foregroundStyle(Color.primary)
                                     .padding(.horizontal)
@@ -61,18 +71,25 @@ struct DriveSettingsView: View {
                                 NavigationLink {
                                     EditKMPGView(value: $kmpl)
                                 } label: {
-                                    HStack {
-                                        VStack(alignment: .leading) {
-                                            Text("\(kmpl)")
-                                                .font(.title.bold())
-                                            Text("KMPL")
+                                    ZStack(alignment: .top) {
+                                        HStack {
+                                            Spacer()
+                                            
+                                            Image(systemName: "chevron.right")
                                                 .foregroundStyle(.gray)
+                                                .padding(.top, 5)
                                         }
                                         
-                                        Spacer()
-                                        
-                                        Image(systemName: "chevron.right")
-                                            .foregroundStyle(.gray)
+                                        HStack {
+                                            VStack(alignment: .leading) {
+                                                Text("\(kmpl)")
+                                                    .font(.title3.bold())
+                                                Text("KMPL")
+                                                    .foregroundStyle(.gray)
+                                            }
+                                            
+                                            Spacer()
+                                        }
                                     }
                                     .foregroundStyle(Color.primary)
                                     .padding(.horizontal)
@@ -87,20 +104,29 @@ struct DriveSettingsView: View {
                                 NavigationLink {
                                     EditGasPriceView(gasPrice: $gasPrice)
                                 } label: {
-                                    HStack {
-                                        VStack(alignment: .leading) {
-                                            Text("$")
-                                                .font(.title)
-                                            + Text(String(format: "%.2f", gasPrice))
-                                                .font(.title.bold())
-                                            Text("Gas price ($/gal)")
+                                    ZStack(alignment: .top) {
+                                        HStack {
+                                            Spacer()
+                                            
+                                            Image(systemName: "chevron.right")
                                                 .foregroundStyle(.gray)
+                                                .padding(.top, 5)
                                         }
                                         
-                                        Spacer()
-                                        
-                                        Image(systemName: "chevron.right")
-                                            .foregroundStyle(.gray)
+                                        HStack {
+                                            VStack(alignment: .leading) {
+                                                Text("$")
+                                                    .font(.title3)
+                                                + Text(String(format: "%.2f", gasPrice))
+                                                    .font(.title3.bold())
+                                                Text("Gas price")
+                                                    .foregroundStyle(.gray)
+                                            }
+                                            
+                                            Spacer()
+                                            
+                                            
+                                        }
                                     }
                                     .foregroundStyle(Color.primary)
                                     .padding(.horizontal)
@@ -115,18 +141,25 @@ struct DriveSettingsView: View {
                                 NavigationLink {
                                     EditMPGView(mpg: $mpg)
                                 } label: {
-                                    HStack {
-                                        VStack(alignment: .leading) {
-                                            Text("\(mpg)")
-                                                .font(.title.bold())
-                                            Text("MPG")
+                                    ZStack(alignment: .top) {
+                                        HStack {
+                                            Spacer()
+                                            
+                                            Image(systemName: "chevron.right")
                                                 .foregroundStyle(.gray)
+                                                .padding(.top, 5)
                                         }
                                         
-                                        Spacer()
-                                        
-                                        Image(systemName: "chevron.right")
-                                            .foregroundStyle(.gray)
+                                        HStack {
+                                            VStack(alignment: .leading) {
+                                                Text("\(mpg)")
+                                                    .font(.title3.bold())
+                                                Text("MPG")
+                                                    .foregroundStyle(.gray)
+                                            }
+                                            
+                                            Spacer()
+                                        }
                                     }
                                     .foregroundStyle(Color.primary)
                                     .padding(.horizontal)
@@ -143,18 +176,18 @@ struct DriveSettingsView: View {
                     
                     VStack(alignment: .leading, spacing: 10) {
                         Text("Vehicle type")
-                            .font(.title3.bold())
+                            .font(.system(size: titlesFontSize, weight: .semibold))
                         
                         ZStack(alignment: .leading) {
                             Capsule()
                                 .fill(.white)
-                                .frame(width: geo.size.width/2 - 20, height: 60)
+                                .frame(width: geo.size.width/2 - 20, height: togglesHeight)
                                 .offset(x: evCar ? 0:geo.size.width/2 - 10)
                                 .animation(.easeIn, value: evCar)
                             HStack {
                                 Text("Electric")
                                     .bold()
-                                    .frame(width: geo.size.width/2 - 20, height: 60)
+                                    .frame(width: geo.size.width/2 - 20, height: togglesHeight)
                                     .background(Color.white.opacity(0.001))
                                     .foregroundStyle(evCar ? .black:.white)
                                     .onTapGesture {
@@ -162,7 +195,7 @@ struct DriveSettingsView: View {
                                     }
                                 Text("Combustion")
                                     .bold()
-                                    .frame(width: geo.size.width/2 - 20, height: 60)
+                                    .frame(width: geo.size.width/2 - 20, height: togglesHeight)
                                     .background(Color.white.opacity(0.001))
                                     .foregroundStyle(evCar == false ? .black:.white)
                                     .onTapGesture {
@@ -178,18 +211,18 @@ struct DriveSettingsView: View {
                     
                     VStack(alignment: .leading, spacing: 10) {
                         Text("Unit of measurement")
-                            .font(.title3.bold())
+                            .font(.system(size: titlesFontSize, weight: .semibold))
                         
                         ZStack(alignment: .leading) {
                             Capsule()
                                 .fill(.white)
-                                .frame(width: geo.size.width/2 - 20, height: 60)
+                                .frame(width: geo.size.width/2 - 20, height: togglesHeight)
                                 .offset(x: metricSystem ? 0:geo.size.width/2 - 10)
                                 .animation(.easeIn, value: metricSystem)
                             HStack {
                                 Text("Metric")
                                     .bold()
-                                    .frame(width: geo.size.width/2 - 20, height: 60)
+                                    .frame(width: geo.size.width/2 - 20, height: togglesHeight)
                                     .background(Color.white.opacity(0.001))
                                     .foregroundStyle(metricSystem ? .black:.white)
                                     .onTapGesture {
@@ -197,7 +230,7 @@ struct DriveSettingsView: View {
                                     }
                                 Text("Imperial")
                                     .bold()
-                                    .frame(width: geo.size.width/2 - 20, height: 60)
+                                    .frame(width: geo.size.width/2 - 20, height: togglesHeight)
                                     .background(Color.white.opacity(0.001))
                                     .foregroundStyle(metricSystem == false ? .black:.white)
                                     .onTapGesture {
@@ -223,6 +256,9 @@ struct DriveSettingsView: View {
                         }
                     }
                 }
+            }
+            .onAppear {
+                print("Drive settings appeared")
             }
         }
     }
